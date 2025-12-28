@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Las Reinas Amantes</title>
+  <link rel="icon" type="image/png" href="https://drive.google.com/uc?export=view&id=1cuaobcDQpPQRjAMLRbe1QMGudhy7-fut">
+  <link rel="shortcut icon" type="image/png" href="https://drive.google.com/uc?export=view&id=1cuaobcDQpPQRjAMLRbe1QMGudhy7-fut">
+  <link rel="apple-touch-icon" href="https://drive.google.com/uc?export=view&id=1cuaobcDQpPQRjAMLRbe1QMGudhy7-fut">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=Playfair+Display:wght@400;700&family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-primary: #f5f1e8;
+      --bg-sidebar: #ffffff;
+      --bg-content: #fefcf8;
+      --bg-paper: #faf8f3;
+      --text-primary: #2c3e50;
+      --text-secondary: #5a6c7d;
+      --text-muted: #8b9aad;
+      --border: #d4e4f7;
+      --accent: #4a90e2;
+      --accent-hover: #6ba3e8;
+      --accent-light: #e3f0ff;
+      --accent-lighter: #f0f7ff;
+      --sidebar-width: 280px;
+      --shadow-sm: 0 1px 3px rgba(74, 144, 226, 0.15);
+      --shadow-md: 0 4px 6px rgba(74, 144, 226, 0.2);
+      --shadow-lg: 0 10px 25px rgba(74, 144, 226, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Cormorant Garamond', 'Crimson Text', 'Georgia', serif;
+      background: linear-gradient(to bottom, #e8e2d5 0%, var(--bg-primary) 100%);
+      background-attachment: fixed;
+      color: var(--text-primary);
+      line-height: 1.8;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    body.authenticated {
+      display: flex;
+    }
+
+    body:not(.authenticated) .main-content,
+    body:not(.authenticated) .sidebar {
+      display: none;
+    }
+
+    /* Login Screen */
+    .login-screen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100vh;
+      background: linear-gradient(135deg, #e8e2d5 0%, #f5f1e8 50%, #fefcf8 100%);
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 10000;
+      animation: fadeIn 0.5s ease;
+    }
+
+    body.authenticated .login-screen {
+      display: none;
+    }
+
+    .login-container {
+      background: var(--bg-paper);
+      border-radius: 24px;
+      padding: 60px 50px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      border: 3px solid var(--accent-light);
+    }
+
+    .login-logo {
+      max-width: 200px;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      margin-bottom: 30px;
+      object-fit: contain;
+    }
+
+    .login-title {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 12px;
+      font-family: 'Playfair Display', serif;
+      letter-spacing: 0.5px;
+    }
+
+    .login-subtitle {
+      font-size: 18px;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .login-input {
+      padding: 16px 20px;
+      font-size: 18px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-family: 'Cormorant Garamond', serif;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .login-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-lighter);
+    }
+
+    .login-button {
+      padding: 16px 32px;
+      font-size: 20px;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: 'Playfair Display', serif;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+    }
+
+    .login-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+    }
+
+    .login-button:active {
+      transform: translateY(0);
+    }
+
+    .login-error {
+      color: #dc3545;
+      font-size: 16px;
+      margin-top: 12px;
+      display: none;
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .login-error.show {
+      display: block;
+      animation: shake 0.5s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(74, 144, 226, 0.03) 2px,
+          rgba(74, 144, 226, 0.03) 4px
+        );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: linear-gradient(to bottom, #2c5f8d 0%, #3a6fa5 50%, #4a80bd 100%);
+      border-right: 3px solid rgba(255, 248, 220, 0.3);
+      overflow-y: auto;
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 100;
+      box-shadow: 4px 0 20px rgba(44, 95, 141, 0.4);
+      background-image: 
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(255, 248, 220, 0.05) 2px,
+          rgba(255, 248, 220, 0.05) 4px
+        );
+    }
+
+    .sidebar-header {
+      padding: 32px 24px;
+      background: linear-gradient(135deg, #1e4a6b 0%, #2c5f8d 100%);
+      color: #fef8e8;
+      border-bottom: 3px solid rgba(255, 248, 220, 0.4);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-family: 'Playfair Display', serif;
+      letter-spacing: 1px;
+      color: #fef8e8;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .sidebar-header p {
+      font-size: 15px;
+      opacity: 0.95;
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 500;
+      color: #f5e6d3;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-content {
+      padding: 24px 0;
+    }
+
+    .chapter-list {
+      list-style: none;
+    }
+
+    .chapter-item {
+      border-bottom: 1px solid rgba(255, 248, 220, 0.15);
+      position: relative;
+    }
+
+    .chapter-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0;
+      background: rgba(255, 248, 220, 0.2);
+      transition: width 0.3s ease;
+    }
+
+    .chapter-item:hover::before {
+      width: 4px;
+    }
+
+    .chapter-link {
+      display: block;
+      padding: 20px 24px;
+      color: #2c5f8d;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-family: 'Playfair Display', 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 500;
+      position: relative;
+      letter-spacing: 0.5px;
+      text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.3);
+    }
+
+    .chapter-link:hover {
+      background: rgba(44, 95, 141, 0.15);
+      color: #3a6fa5;
+      padding-left: 32px;
+      text-shadow: 1px 1px 4px rgba(255, 255, 255, 0.4);
+    }
+
+    .chapter-link.active {
+      background: rgba(44, 95, 141, 0.25);
+      color: #2c5f8d;
+      border-left: 5px solid #2c5f8d;
+      font-weight: 700;
+      box-shadow: inset 5px 0 0 #2c5f8d, 0 2px 8px rgba(0, 0, 0, 0.2);
+      padding-left: 32px;
+      font-size: 19px;
+      text-shadow: 1px 1px 4px rgba(255, 255, 255, 0.5);
+    }
+
+    .chapter-link.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      background: #2c5f8d;
+      box-shadow: 0 0 10px rgba(44, 95, 141, 0.6);
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      overflow-y: auto;
+      background: var(--bg-content);
+      background-image: 
+        radial-gradient(circle at 20% 50%, rgba(74, 144, 226, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(74, 144, 226, 0.05) 0%, transparent 50%),
+        linear-gradient(to bottom, #fefcf8 0%, #faf8f3 100%);
+      position: relative;
+    }
+
+    .content-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 60px;
+      background: var(--bg-paper);
+      box-shadow: 
+        inset 0 0 80px rgba(74, 144, 226, 0.1),
+        0 0 1px rgba(74, 144, 226, 0.2);
+      min-height: 100vh;
+      position: relative;
+    }
+
+    .content-wrapper::before {
+      content: '';
+      position: absolute;
+      left: 80px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, transparent, var(--accent-light), transparent);
+      opacity: 0.5;
+    }
+
+    .chapter-section {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .chapter-section.active {
+      display: block;
+    }
+
+    /* Portada */
+    .cover-section {
+      display: none;
+      animation: fadeIn 0.3s ease;
+      text-align: center;
+      padding: 60px 40px;
+      min-height: 80vh;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .cover-section.active {
+      display: flex;
+    }
+
+    .cover-image {
+      max-width: 100%;
+      height: auto;
+      max-height: 85vh;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      margin-bottom: 40px;
+      object-fit: contain;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      -khtml-user-drag: none;
+      -moz-user-drag: none;
+      -o-user-drag: none;
+      pointer-events: none;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .chapter-title {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 3px solid var(--accent-light);
+      font-family: 'Playfair Display', 'Cormorant Garamond', serif;
+      letter-spacing: -0.5px;
+      text-shadow: 0 2px 4px rgba(74, 144, 226, 0.1);
+      position: relative;
+    }
+
+    .chapter-title::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 100px;
+      height: 3px;
+      background: var(--accent);
+    }
+
+    .chapter-content {
+      font-size: 22px;
+      line-height: 2;
+      color: var(--text-primary);
+      font-family: 'Cormorant Garamond', 'Crimson Text', 'Georgia', serif;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      pointer-events: auto;
+    }
+
+    .chapter-content p {
+      margin-bottom: 28px;
+      text-align: justify;
+      text-indent: 0;
+      position: relative;
+    }
+
+    /* Primera letra capital (Drop Cap) */
+    .chapter-content p:first-of-type::first-letter {
+      float: left;
+      font-size: 110px;
+      line-height: 0.75;
+      padding-top: 12px;
+      padding-right: 14px;
+      padding-bottom: 6px;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: 'Playfair Display', 'Cormorant Garamond', serif;
+      text-shadow: 3px 3px 6px rgba(74, 144, 226, 0.25);
+      margin-right: 6px;
+      margin-left: -4px;
+    }
+
+    /* Asegurar que el primer párrafo tenga suficiente espacio */
+    .chapter-content p:first-of-type {
+      text-indent: 0;
+    }
+
+    .chapter-content h2 {
+      font-size: 36px;
+      font-weight: 700;
+      margin-top: 56px;
+      margin-bottom: 28px;
+      color: var(--accent);
+      font-family: 'Playfair Display', 'Cormorant Garamond', serif;
+      border-bottom: 2px solid var(--accent-light);
+      padding-bottom: 12px;
+      letter-spacing: -0.3px;
+    }
+
+    .chapter-content h3 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-top: 44px;
+      margin-bottom: 24px;
+      color: var(--accent-hover);
+      font-family: 'Playfair Display', 'Cormorant Garamond', serif;
+      letter-spacing: -0.2px;
+    }
+
+    .chapter-content h4 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-top: 36px;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .chapter-content ul,
+    .chapter-content ol {
+      margin: 24px 0;
+      padding-left: 32px;
+    }
+
+    .chapter-content li {
+      margin-bottom: 12px;
+    }
+
+    .chapter-content blockquote {
+      border-left: 5px solid var(--accent);
+      padding: 20px 32px;
+      margin: 32px 0;
+      margin-left: 20px;
+      font-style: italic;
+      color: var(--text-secondary);
+      background: var(--accent-lighter);
+      border-radius: 0 8px 8px 0;
+      font-size: 1.1em;
+      box-shadow: inset 4px 0 0 var(--accent);
+      position: relative;
+    }
+
+    .chapter-content blockquote::before {
+      content: '"';
+      font-size: 72px;
+      color: var(--accent);
+      opacity: 0.3;
+      position: absolute;
+      left: 16px;
+      top: -10px;
+      font-family: 'Playfair Display', serif;
+    }
+
+    .chapter-content strong {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .chapter-content em {
+      font-style: italic;
+    }
+
+    .chapter-content code {
+      background: var(--bg-primary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+
+    .chapter-content pre {
+      background: var(--bg-primary);
+      padding: 20px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 24px 0;
+    }
+
+    .chapter-content pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .chapter-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 32px 0;
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Modal/Popup */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg-paper);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 600px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      border: 3px solid var(--accent);
+      position: relative;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--accent-light);
+    }
+
+    .modal-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: 'Playfair Display', serif;
+      margin-bottom: 8px;
+    }
+
+    .modal-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .modal-body {
+      font-size: 18px;
+      color: var(--text-primary);
+      line-height: 1.8;
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .modal-chapter-list {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0;
+    }
+
+    .modal-chapter-item {
+      padding: 16px;
+      margin-bottom: 12px;
+      background: var(--accent-lighter);
+      border-radius: 8px;
+      border-left: 4px solid var(--accent);
+      font-weight: 600;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-weight: bold;
+    }
+
+    .modal-close:hover {
+      background: var(--accent-hover);
+      transform: scale(1.1);
+    }
+
+    /* Error State */
+    .error-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .error-state i {
+      font-size: 48px;
+      color: #dc3545;
+      margin-bottom: 20px;
+    }
+
+    .error-state h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+    }
+
+    .error-state p {
+      font-size: 16px;
+      margin-bottom: 24px;
+    }
+
+    .chapter-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 32px 0;
+    }
+
+    .chapter-content table th,
+    .chapter-content table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chapter-content table th {
+      background: var(--bg-primary);
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Scrollbar Styles */
+    .sidebar::-webkit-scrollbar,
+    .main-content::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
+      background: rgba(30, 74, 107, 0.3);
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background: rgba(255, 248, 220, 0.4);
+      border-radius: 5px;
+      border: 2px solid rgba(30, 74, 107, 0.3);
+    }
+
+    .sidebar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 248, 220, 0.6);
+    }
+
+    .main-content::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+
+    .main-content::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .main-content::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .content-wrapper {
+        padding: 40px 20px;
+      }
+
+      .chapter-title {
+        font-size: 32px;
+      }
+
+      .chapter-content {
+        font-size: 18px;
+      }
+
+      .mobile-menu-toggle {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 200;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 20px;
+        box-shadow: var(--shadow-lg);
+      }
+
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 99;
+      }
+
+      .sidebar-overlay.open {
+        display: block;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .mobile-menu-toggle {
+        display: none;
+      }
+
+      .sidebar-overlay {
+        display: none !important;
+      }
+    }
+
+    /* Print Styles */
+    @media print {
+      .sidebar {
+        display: none;
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .chapter-section {
+        display: block !important;
+        page-break-before: always;
+      }
+
+      .chapter-section:first-child {
+        page-break-before: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-container">
+      <img src="https://drive.google.com/uc?export=view&id=1cuaobcDQpPQRjAMLRbe1QMGudhy7-fut" alt="Las Reinas Amantes" class="login-logo" id="loginLogo" onerror="this.onerror=null; this.src='https://drive.google.com/thumbnail?id=1cuaobcDQpPQRjAMLRbe1QMGudhy7-fut&sz=w1920';">
+      <h1 class="login-title">Las Reinas Amantes</h1>
+      <p class="login-subtitle">Ingrese la clave para continuar</p>
+      <form class="login-form" id="loginForm" onsubmit="handleLogin(event)">
+        <input type="password" class="login-input" id="passwordInput" placeholder="Ingrese la clave" required autofocus>
+        <button type="submit" class="login-button">Ingresar</button>
+        <div class="login-error" id="loginError">Clave incorrecta. Intente nuevamente.</div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mobile Menu Toggle -->
+  <button class="mobile-menu-toggle" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1 id="documentTitle">Las Reinas Amantes</h1>
+      <p>Índice de Capítulos</p>
+    </div>
+    <div class="sidebar-content">
+      <ul class="chapter-list" id="chapterList">
+        <!-- Los capítulos se generarán dinámicamente -->
+      </ul>
+    </div>
+  </aside>
+
+    <!-- Main Content -->
+  <main class="main-content">
+    <div class="content-wrapper" id="contentWrapper">
+      <!-- Loading State -->
+      <div id="loadingState" style="text-align: center; padding: 60px 20px;">
+        <div style="font-size: 24px; color: var(--text-secondary); margin-bottom: 16px;">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 18px;">Cargando contenido desde Google Sheets...</p>
+      </div>
+      <!-- Los capítulos se generarán dinámicamente aquí -->
+    </div>
+  </main>
+
+  <!-- Modal para último capítulo -->
+  <div class="modal-overlay" id="lastChapterModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeLastChapterModal()">&times;</button>
+      <div class="modal-header">
+        <div class="modal-title">Actualización de Contenido</div>
+        <div class="modal-subtitle">Nuevos capítulos agregados</div>
+      </div>
+      <div class="modal-body" id="lastChapterModalBody">
+        <!-- Contenido generado dinámicamente -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ID de la hoja de Google Sheets
+    const SHEET_ID = '10IqU3C6Dvr-UJ4hbCo8y0hFwkxwY-vFHwbHpwNJ9CKE';
+    const SHEET_NAME = 'Hoja 1'; // Cambia esto si tu hoja tiene otro nombre
+    
+    // Array para almacenar los capítulos cargados
+    let chapters = [];
+    let correctPassword = ''; // Clave correcta desde la hoja
+
+    // Cargar datos desde Google Sheets
+    async function loadChaptersFromSheets() {
+      try {
+        // URL de la API pública de Google Sheets
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Error al cargar la hoja: ${response.status} ${response.statusText}`);
+        }
+        const text = await response.text();
+        
+        // Extraer el JSON (Google Sheets devuelve el JSON envuelto en una función)
+        // Formato: google.visualization.Query.setResponse({...json...});
+        let jsonMatch = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/s);
+        
+        // Si no encuentra el patrón, intentar otra variante
+        if (!jsonMatch) {
+          jsonMatch = text.match(/setResponse\((.*)\);/s);
+        }
+        
+        // Si aún no encuentra, intentar extraer directamente el objeto JSON
+        if (!jsonMatch) {
+          const braceStart = text.indexOf('{');
+          const braceEnd = text.lastIndexOf('}');
+          if (braceStart !== -1 && braceEnd !== -1 && braceEnd > braceStart) {
+            jsonMatch = [null, text.substring(braceStart, braceEnd + 1)];
+          }
+        }
+        
+        if (!jsonMatch || !jsonMatch[1]) {
+          throw new Error('No se pudo parsear la respuesta de Google Sheets. Verifica que la hoja esté compartida públicamente.');
+        }
+        
+        let data;
+        try {
+          data = JSON.parse(jsonMatch[1]);
+        } catch (parseError) {
+          throw new Error('Error al parsear los datos JSON. Verifica que la hoja tenga el formato correcto.');
+        }
+        
+        // Parsear los datos
+        const rows = data.table.rows;
+        chapters = [];
+        
+        // Obtener la clave de la columna E (índice 4), fila 2 (índice 1, ya que la fila 0 es el header)
+        if (rows.length > 1) {
+          const passwordRow = rows[1].c; // Fila 2 (índice 1)
+          if (passwordRow && passwordRow[4] && passwordRow[4].v) {
+            correctPassword = passwordRow[4].v.toString().trim();
+          }
+        }
+        
+        // Estrategia de parsing:
+        // - Buscar la columna con títulos (generalmente la primera columna con texto)
+        // - Buscar la columna con contenido (la que tiene más texto)
+        // Saltamos la primera fila si parece ser encabezado
+        let startRow = 0;
+        if (rows.length > 0) {
+          const firstRow = rows[0].c;
+          if (firstRow && firstRow[0] && firstRow[0].v) {
+            const firstCell = firstRow[0].v.toString().toLowerCase();
+            if (firstCell.includes('título') || firstCell.includes('capítulo') || 
+                firstCell.includes('title') || firstCell.includes('contenido') ||
+                firstCell.includes('content')) {
+              startRow = 1;
+            }
+          }
+        }
+        
+        // Determinar qué columnas usar
+        // Columna A (0): Título
+        // Columna B (1): Contenido  
+        // Columna C (2): Visible (x o vacío)
+        // Columna D (3): Fecha (DD/MM/AAAA)
+        let titleColIndex = 0;
+        let contentColIndex = 1;
+        const visibleColIndex = 2; // Columna C
+        const fechaColIndex = 3;   // Columna D
+        
+        // Analizar las primeras filas para determinar la estructura
+        for (let sampleRow = startRow; sampleRow < Math.min(startRow + 5, rows.length); sampleRow++) {
+          const row = rows[sampleRow].c;
+          if (!row) continue;
+          
+          // Encontrar la columna con el texto más corto (probablemente títulos)
+          for (let col = 0; col < Math.min(row.length, 3); col++) {
+            if (row[col] && row[col].v) {
+              const cellText = row[col].v.toString().trim();
+              if (cellText.length > 0 && cellText.length < 100) {
+                titleColIndex = col;
+                break;
+              }
+            }
+          }
+          
+          // Encontrar la columna con más texto (probablemente contenido)
+          let maxLength = 0;
+          for (let col = 0; col < row.length; col++) {
+            if (row[col] && row[col].v) {
+              const cellText = row[col].v.toString().trim();
+              if (cellText.length > maxLength) {
+                maxLength = cellText.length;
+                contentColIndex = col;
+              }
+            }
+          }
+          
+          if (titleColIndex !== contentColIndex) break;
+        }
+        
+        // Procesar todas las filas
+        for (let i = startRow; i < rows.length; i++) {
+          const row = rows[i].c;
+          if (!row || row.length === 0) continue;
+          
+          // Obtener título
+          let title = null;
+          if (row[titleColIndex] && row[titleColIndex].v) {
+            title = row[titleColIndex].v.toString().trim();
+          }
+          
+          // Si no hay título en la columna esperada, buscar en la primera columna no vacía
+          if (!title || title === '') {
+            for (let j = 0; j < Math.min(row.length, 3); j++) {
+              if (row[j] && row[j].v) {
+                const cellText = row[j].v.toString().trim();
+                if (cellText.length > 0 && cellText.length < 200) {
+                  title = cellText;
+                  titleColIndex = j;
+                  break;
+                }
+              }
+            }
+          }
+          
+          if (!title || title === '') continue; // Saltar filas sin título
+          
+          // Obtener contenido
+          let content = '';
+          if (row[contentColIndex] && row[contentColIndex].v) {
+            content = row[contentColIndex].v.toString().trim();
+          }
+          
+          // Si no hay contenido en la columna esperada, buscar en otras columnas
+          if (!content || content.length < 10) {
+            for (let j = 0; j < row.length; j++) {
+              if (j !== titleColIndex && row[j] && row[j].v) {
+                const cellText = row[j].v.toString().trim();
+                if (cellText.length > content.length) {
+                  content = cellText;
+                  contentColIndex = j;
+                }
+              }
+            }
+          }
+          
+          // Verificar si el capítulo está visible (columna C debe tener "x")
+          let isVisible = false;
+          if (row[visibleColIndex] && row[visibleColIndex].v) {
+            const visibleValue = row[visibleColIndex].v.toString().trim().toLowerCase();
+            isVisible = visibleValue === 'x' || visibleValue === 'true' || visibleValue === '1';
+          }
+          
+          // Solo agregar capítulos visibles
+          if (title && isVisible) {
+            // Obtener fecha (columna D)
+            let fecha = '';
+            if (row[fechaColIndex] && row[fechaColIndex].v) {
+              fecha = row[fechaColIndex].v.toString().trim();
+            }
+            
+            chapters.push({
+              id: `chapter-${chapters.length + 1}`,
+              title: title,
+              content: content || 'Sin contenido disponible.',
+              fecha: fecha
+            });
+          }
+        }
+        
+        if (chapters.length === 0) {
+          throw new Error('No se encontraron capítulos en la hoja de cálculo.');
+        }
+        
+        // Generar HTML de los capítulos
+        generateChaptersHTML();
+        generateChapterList();
+        
+        // Mostrar la portada inicialmente (no el primer capítulo)
+        showChapter('cover');
+        
+        // Mostrar popup con último capítulo agregado
+        showLastChapterModal();
+        
+      } catch (error) {
+        console.error('Error cargando datos:', error);
+        showError(error.message);
+      }
+    }
+    
+    // Mostrar error
+    function showError(message) {
+      const contentWrapper = document.getElementById('contentWrapper');
+      contentWrapper.innerHTML = `
+        <div class="error-state">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h2>Error al cargar el documento</h2>
+          <p>${message}</p>
+          <div style="font-size: 14px; margin-top: 20px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto;">
+            <p><strong>Para que funcione correctamente:</strong></p>
+            <ol style="text-align: left; margin-top: 12px;">
+              <li>La hoja de Google Sheets debe estar compartida públicamente</li>
+              <li>Ve a la hoja: <a href="https://docs.google.com/spreadsheets/d/10IqU3C6Dvr-UJ4hbCo8y0hFwkxwY-vFHwbHpwNJ9CKE/edit" target="_blank" style="color: var(--accent);">Abrir hoja</a></li>
+              <li>Haz clic en "Compartir" → "Cambiar a cualquier persona con el enlace" → "Lector"</li>
+              <li>La estructura debe tener: una columna con títulos y otra con contenido</li>
+            </ol>
+          </div>
+          <button onclick="location.reload()" style="
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+          ">
+            <i class="fas fa-redo"></i> Reintentar
+          </button>
+        </div>
+      `;
+    }
+    
+    // Generar HTML de los capítulos
+    function generateChaptersHTML() {
+      const contentWrapper = document.getElementById('contentWrapper');
+      contentWrapper.innerHTML = '';
+      
+      // Crear sección de portada
+      const coverSection = document.createElement('section');
+      coverSection.className = 'cover-section active';
+      coverSection.id = 'cover';
+      
+      const coverImage = document.createElement('img');
+      coverImage.className = 'cover-image';
+      coverImage.src = 'https://drive.google.com/uc?export=view&id=1cuaobcDQpPQRjAMLRbe1QMGudhy7-fut';
+      coverImage.alt = 'Portada - Las Reinas Amantes';
+      coverImage.setAttribute('draggable', 'false');
+      coverImage.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+        return false;
+      });
+      coverImage.onerror = function() {
+        // Si falla el enlace directo, intentar con el enlace alternativo
+        this.src = 'https://drive.google.com/thumbnail?id=1cuaobcDQpPQRjAMLRbe1QMGudhy7-fut&sz=w1920';
+      };
+      
+      coverSection.appendChild(coverImage);
+      contentWrapper.appendChild(coverSection);
+      
+      chapters.forEach((chapter, index) => {
+        const section = document.createElement('section');
+        section.className = 'chapter-section';
+        // No mostrar activo por defecto, la portada se mostrará primero
+        section.id = chapter.id;
+        
+        const title = document.createElement('h1');
+        title.className = 'chapter-title';
+        title.textContent = chapter.title;
+        
+        const content = document.createElement('div');
+        content.className = 'chapter-content';
+        
+        // Convertir el texto plano a HTML formateado
+        // Preservar saltos de línea y formato básico
+        let htmlContent = chapter.content || '';
+        
+        // Si el contenido parece ser HTML, usarlo directamente
+        if (htmlContent.includes('<p>') || htmlContent.includes('<div>') || htmlContent.includes('<h')) {
+          content.innerHTML = htmlContent;
+        } else {
+          // Convertir texto plano a HTML
+          // Dividir por párrafos (doble salto de línea)
+          const paragraphs = htmlContent.split(/\n\n+/).filter(p => p.trim() !== '');
+          
+          if (paragraphs.length > 0) {
+            htmlContent = paragraphs.map(para => {
+              let p = para.trim();
+              // Convertir formato Markdown básico
+              p = p.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Negritas
+              p = p.replace(/\*(.*?)\*/g, '<em>$1</em>'); // Itálicas
+              // Reemplazar saltos de línea simples dentro del párrafo
+              p = p.replace(/\n/g, '<br>');
+              return `<p>${p}</p>`;
+            }).join('');
+          } else {
+            // Si no hay párrafos, tratar todo como un solo párrafo
+            htmlContent = htmlContent
+              .replace(/\n/g, '<br>')
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            htmlContent = `<p>${htmlContent}</p>`;
+          }
+          
+          content.innerHTML = htmlContent;
+        }
+        
+        section.appendChild(title);
+        section.appendChild(content);
+        contentWrapper.appendChild(section);
+      });
+    }
+    
+    // Generar lista de capítulos en el sidebar
+    function generateChapterList() {
+      const chapterList = document.getElementById('chapterList');
+      chapterList.innerHTML = '';
+
+      chapters.forEach((chapter, index) => {
+        const li = document.createElement('li');
+        li.className = 'chapter-item';
+        
+        const link = document.createElement('a');
+        link.href = '#';
+        link.className = 'chapter-link';
+        if (index === 0) link.classList.add('active');
+        link.textContent = chapter.title;
+        link.onclick = (e) => {
+          e.preventDefault();
+          showChapter(chapter.id);
+          if (window.innerWidth <= 768) {
+            toggleSidebar();
+          }
+        };
+        
+        li.appendChild(link);
+        chapterList.appendChild(li);
+      });
+    }
+
+    // Mostrar un capítulo específico
+    function showChapter(chapterId) {
+      // Ocultar todos los capítulos y la portada
+      document.querySelectorAll('.chapter-section, .cover-section').forEach(section => {
+        section.classList.remove('active');
+      });
+
+      // Mostrar el capítulo o portada seleccionado
+      const selectedSection = document.getElementById(chapterId);
+      if (selectedSection) {
+        selectedSection.classList.add('active');
+        
+        // Scroll al inicio del contenido
+        document.querySelector('.main-content').scrollTop = 0;
+      }
+
+      // Actualizar enlaces activos (solo si no es la portada)
+      if (chapterId !== 'cover') {
+        document.querySelectorAll('.chapter-link').forEach(link => {
+          link.classList.remove('active');
+        });
+
+        const activeLink = Array.from(document.querySelectorAll('.chapter-link')).find(link => {
+          const chapter = chapters.find(ch => ch.id === chapterId);
+          return chapter && link.textContent === chapter.title;
+        });
+
+        if (activeLink) {
+          activeLink.classList.add('active');
+          // Scroll del sidebar al enlace activo
+          activeLink.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      } else {
+        // Si es la portada, desactivar todos los enlaces
+        document.querySelectorAll('.chapter-link').forEach(link => {
+          link.classList.remove('active');
+        });
+      }
+    }
+
+    // Función para parsear fecha DD/MM/AAAA a objeto Date
+    function parseDate(fechaStr) {
+      if (!fechaStr || fechaStr.trim() === '') return null;
+      
+      const partes = fechaStr.trim().split('/');
+      if (partes.length !== 3) return null;
+      
+      const dia = parseInt(partes[0], 10);
+      const mes = parseInt(partes[1], 10) - 1; // Mes es 0-indexed
+      const año = parseInt(partes[2], 10);
+      
+      if (isNaN(dia) || isNaN(mes) || isNaN(año)) return null;
+      
+      return new Date(año, mes, dia);
+    }
+    
+    // Mostrar modal con último capítulo agregado
+    function showLastChapterModal() {
+      if (chapters.length === 0) return;
+      
+      // Parsear fechas y encontrar la más reciente
+      const chaptersWithDates = chapters.map(ch => ({
+        ...ch,
+        fechaDate: parseDate(ch.fecha)
+      })).filter(ch => ch.fechaDate !== null); // Solo capítulos con fecha válida
+      
+      if (chaptersWithDates.length === 0) return; // No hay fechas válidas
+      
+      // Encontrar la fecha más reciente
+      let latestDate = chaptersWithDates[0].fechaDate;
+      chaptersWithDates.forEach(ch => {
+        if (ch.fechaDate.getTime() > latestDate.getTime()) {
+          latestDate = ch.fechaDate;
+        }
+      });
+      
+      // Filtrar capítulos con la fecha más reciente
+      const latestChapters = chaptersWithDates.filter(ch => 
+        ch.fechaDate.getTime() === latestDate.getTime()
+      );
+      
+      // Crear contenido del modal
+      const modalBody = document.getElementById('lastChapterModalBody');
+      if (!modalBody) return;
+      
+      let html = '';
+      
+      if (latestChapters.length === 1) {
+        html = `<p><strong>Último capítulo agregado:</strong> "${latestChapters[0].title}"</p>`;
+        html += `<p><strong>Fecha:</strong> ${latestChapters[0].fecha}</p>`;
+      } else {
+        html = `<p><strong>Últimos capítulos agregados:</strong></p>`;
+        html += `<p><strong>Fecha:</strong> ${latestChapters[0].fecha}</p>`;
+        html += `<ul class="modal-chapter-list">`;
+        latestChapters.forEach(ch => {
+          html += `<li class="modal-chapter-item">${ch.title}</li>`;
+        });
+        html += `</ul>`;
+      }
+      
+      modalBody.innerHTML = html;
+      
+      // Mostrar modal
+      const modal = document.getElementById('lastChapterModal');
+      if (modal) {
+        modal.classList.add('active');
+      }
+    }
+    
+    // Cerrar modal
+    function closeLastChapterModal() {
+      const modal = document.getElementById('lastChapterModal');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+    }
+
+    // Toggle sidebar en móvil
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('open');
+    }
+
+    // Navegación con teclado
+    document.addEventListener('keydown', (e) => {
+      const currentIndex = chapters.findIndex(ch => {
+        const section = document.getElementById(ch.id);
+        return section && section.classList.contains('active');
+      });
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        if (currentIndex < chapters.length - 1) {
+          e.preventDefault();
+          showChapter(chapters[currentIndex + 1].id);
+        }
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        if (currentIndex > 0) {
+          e.preventDefault();
+          showChapter(chapters[currentIndex - 1].id);
+        }
+      }
+    });
+
+    // Protección contra copia
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      return false;
+    }, false);
+
+    document.addEventListener('selectstart', function(e) {
+      e.preventDefault();
+      return false;
+    }, false);
+
+    document.addEventListener('dragstart', function(e) {
+      e.preventDefault();
+      return false;
+    }, false);
+
+    // Deshabilitar atajos de teclado para copiar
+    document.addEventListener('keydown', function(e) {
+      // Deshabilitar Ctrl+C, Ctrl+A, Ctrl+V, Ctrl+X, Ctrl+S, Ctrl+P
+      if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || 
+                        e.key === 'a' || e.key === 'A' || 
+                        e.key === 'v' || e.key === 'V' || 
+                        e.key === 'x' || e.key === 'X' || 
+                        e.key === 's' || e.key === 'S' || 
+                        e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Deshabilitar F12 (DevTools)
+      if (e.key === 'F12') {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Deshabilitar Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (código fuente)
+      if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'i' || e.key === 'j')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+        e.preventDefault();
+        return false;
+      }
+    }, false);
+
+    // Deshabilitar selección de texto
+    document.addEventListener('DOMContentLoaded', function() {
+      const style = document.createElement('style');
+      style.textContent = `
+        ::selection {
+          background: transparent !important;
+          color: inherit !important;
+        }
+        ::-moz-selection {
+          background: transparent !important;
+          color: inherit !important;
+        }
+      `;
+      document.head.appendChild(style);
+    });
+
+    // Deshabilitar arrastrar imágenes
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('img').forEach(img => {
+        img.addEventListener('dragstart', function(e) {
+          e.preventDefault();
+          return false;
+        });
+        img.setAttribute('draggable', 'false');
+      });
+    });
+
+    // Protección adicional para imágenes cuando se carguen dinámicamente
+    const originalAppendChild = Node.prototype.appendChild;
+    Node.prototype.appendChild = function(child) {
+      if (child.nodeName === 'IMG') {
+        child.setAttribute('draggable', 'false');
+        child.addEventListener('dragstart', function(e) {
+          e.preventDefault();
+          return false;
+        });
+      }
+      return originalAppendChild.call(this, child);
+    };
+
+    // Función para manejar el login
+    function handleLogin(event) {
+      event.preventDefault();
+      const passwordInput = document.getElementById('passwordInput');
+      const loginError = document.getElementById('loginError');
+      const enteredPassword = passwordInput.value.trim();
+      
+      if (enteredPassword === correctPassword) {
+        // Clave correcta, autenticar y mostrar contenido
+        document.body.classList.add('authenticated');
+        loginError.classList.remove('show');
+        passwordInput.value = '';
+        
+        // Si aún no se han cargado los capítulos, cargarlos ahora
+        if (chapters.length === 0) {
+          loadChaptersFromSheets();
+        }
+      } else {
+        // Clave incorrecta
+        loginError.classList.add('show');
+        passwordInput.value = '';
+        passwordInput.focus();
+        
+        // Agitar el input
+        passwordInput.style.animation = 'shake 0.5s ease';
+        setTimeout(() => {
+          passwordInput.style.animation = '';
+        }, 500);
+      }
+    }
+
+    // Cargar la clave primero antes de mostrar el login
+    async function loadPassword() {
+      try {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+        const response = await fetch(url);
+        const text = await response.text();
+        
+        let jsonMatch = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/s);
+        if (!jsonMatch) {
+          jsonMatch = text.match(/setResponse\((.*)\);/s);
+        }
+        if (!jsonMatch) {
+          const braceStart = text.indexOf('{');
+          const braceEnd = text.lastIndexOf('}');
+          if (braceStart !== -1 && braceEnd !== -1 && braceEnd > braceStart) {
+            jsonMatch = [null, text.substring(braceStart, braceEnd + 1)];
+          }
+        }
+        
+        if (jsonMatch && jsonMatch[1]) {
+          const data = JSON.parse(jsonMatch[1]);
+          const rows = data.table.rows;
+          
+          // Obtener la clave de la columna E (índice 4), fila 2 (índice 1)
+          if (rows.length > 1) {
+            const passwordRow = rows[1].c;
+            if (passwordRow && passwordRow[4] && passwordRow[4].v) {
+              correctPassword = passwordRow[4].v.toString().trim();
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error cargando clave:', error);
+      }
+    }
+
+    // Configurar imagen del login con manejo de errores (igual que la portada)
+    document.addEventListener('DOMContentLoaded', function() {
+      const loginLogo = document.getElementById('loginLogo');
+      if (loginLogo) {
+        loginLogo.onerror = function() {
+          // Si falla el enlace directo, intentar con el enlace alternativo
+          this.onerror = null; // Prevenir loop infinito
+          this.src = 'https://drive.google.com/thumbnail?id=1cuaobcDQpPQRjAMLRbe1QMGudhy7-fut&sz=w1920';
+        };
+      }
+    });
+
+    // Inicializar - Cargar clave primero, luego mostrar login
+    loadPassword().then(() => {
+      // El login ya está visible por defecto
+      // Cuando el usuario ingrese la clave correcta, se cargarán los capítulos
+    });
+
+    // Cerrar sidebar al hacer clic fuera en móvil
+    document.querySelector('.sidebar-overlay').addEventListener('click', () => {
+      toggleSidebar();
+    });
+
+    // Cerrar modal al hacer clic fuera
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('lastChapterModal');
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) {
+            closeLastChapterModal();
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
+
