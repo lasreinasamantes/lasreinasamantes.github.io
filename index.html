@@ -1550,59 +1550,190 @@
     let currentReadingChapterId = null;
     let readingTimeout = null;
     let useResponsiveVoice = false;
+    let useGoogleTTS = false; // Fallback usando Google TTS API
     let speechSynthesis = null;
     let currentUtterance = null;
+    let currentAudio = null; // Para Google TTS fallback
+    let audioQueue = []; // Cola de audio para textos largos
     
     // Detectar qué sistema de TTS está disponible
     function initTTS() {
-      // En móviles, usar Web Speech API directamente (más confiable)
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
-      if (isMobile) {
-        // En móviles, SIEMPRE usar Web Speech API (no ResponsiveVoice)
-        if ('speechSynthesis' in window) {
-          speechSynthesis = window.speechSynthesis;
-          useResponsiveVoice = false;
-          console.log('Dispositivo móvil detectado - Usando Web Speech API');
-          
-          // En móviles, especialmente iOS, intentar obtener voces para activar el servicio
-          try {
-            // Intentar obtener voces para activar el servicio
-            const voices = speechSynthesis.getVoices();
-            // Si hay voces disponibles, está listo
-            if (voices.length > 0) {
-              return true;
-            }
-            // Si no hay voces, el servicio aún puede funcionar, solo necesita tiempo
-            // para cargar las voces cuando se use
-          } catch (e) {
-            console.warn('Error al inicializar voces en móvil:', e);
-          }
-          
-          return true;
-        } else {
-          console.error('Web Speech API no disponible en este dispositivo móvil');
-          return false;
-        }
-      } else {
-        // En desktop, intentar ResponsiveVoice primero (mejor calidad)
-        if (typeof responsiveVoice !== 'undefined' && responsiveVoice) {
-          useResponsiveVoice = true;
-          console.log('Usando ResponsiveVoice para lectura');
-          return true;
-        }
-      }
+      // Resetear flags
+      useResponsiveVoice = false;
+      useGoogleTTS = false;
       
-      // Fallback a Web Speech API (para desktop)
-      if ('speechSynthesis' in window) {
-        speechSynthesis = window.speechSynthesis;
-        useResponsiveVoice = false;
-        console.log('Usando Web Speech API para lectura (fallback)');
+      // En desktop, intentar ResponsiveVoice primero (mejor calidad)
+      if (!isMobile && typeof responsiveVoice !== 'undefined' && responsiveVoice) {
+        useResponsiveVoice = true;
+        console.log('Usando ResponsiveVoice para lectura');
         return true;
       }
       
-      console.error('No hay sistema de TTS disponible');
-      return false;
+      // Intentar Web Speech API (funciona en desktop y móviles)
+      if ('speechSynthesis' in window) {
+        speechSynthesis = window.speechSynthesis;
+        useResponsiveVoice = false;
+        useGoogleTTS = false;
+        console.log(isMobile ? 'Dispositivo móvil - Usando Web Speech API' : 'Usando Web Speech API para lectura');
+        
+        // Intentar activar el servicio obteniendo voces
+        try {
+          const voices = speechSynthesis.getVoices();
+          if (voices.length > 0) {
+            console.log('Voces disponibles:', voices.length);
+          }
+        } catch (e) {
+          console.warn('Error al obtener voces:', e);
+        }
+        
+        return true;
+      }
+      
+      // Si Web Speech API no está disponible, usar Google TTS como último recurso
+      // Google TTS siempre está disponible (es una API pública)
+      useGoogleTTS = true;
+      console.log('Usando Google TTS API como fallback');
+      return true;
+    }
+    
+    // Función para usar Google TTS API (fallback gratuito)
+    async function readWithGoogleTTS(text, speed, chapterId) {
+      try {
+        // Dividir texto en chunks de máximo 200 caracteres (límite de Google TTS)
+        const maxChunkLength = 200;
+        const chunks = [];
+        const sentences = text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
+        
+        let currentChunk = '';
+        for (const sentence of sentences) {
+          if ((currentChunk + sentence).length <= maxChunkLength) {
+            currentChunk += sentence;
+          } else {
+            if (currentChunk) chunks.push(currentChunk.trim());
+            // Si una oración es muy larga, dividirla
+            if (sentence.length > maxChunkLength) {
+              const words = sentence.split(' ');
+              let wordChunk = '';
+              for (const word of words) {
+                if ((wordChunk + ' ' + word).length <= maxChunkLength) {
+                  wordChunk += (wordChunk ? ' ' : '') + word;
+                } else {
+                  if (wordChunk) chunks.push(wordChunk.trim());
+                  wordChunk = word;
+                }
+              }
+              if (wordChunk) currentChunk = wordChunk;
+            } else {
+              currentChunk = sentence;
+            }
+          }
+        }
+        if (currentChunk) chunks.push(currentChunk.trim());
+        
+        // Si no hay chunks, usar el texto completo (limitado)
+        if (chunks.length === 0) chunks.push(text.substring(0, maxChunkLength));
+        
+        console.log(`Texto dividido en ${chunks.length} chunks para Google TTS`);
+        
+        // Crear cola de audio
+        audioQueue = [];
+        let currentIndex = 0;
+        let isPaused = false;
+        
+        // Función para reproducir el siguiente chunk
+        function playNextChunk() {
+          if (isPaused) return;
+          
+          if (currentIndex >= chunks.length) {
+            // Terminó la lectura
+            isReading = false;
+            currentReadingChapterId = null;
+            updateReadButton(chapterId, 'play');
+            updateReadStatus(chapterId, 'Lectura completada');
+            setTimeout(() => {
+              updateReadStatus(chapterId, '');
+            }, 2000);
+            currentAudio = null;
+            audioQueue = [];
+            return;
+          }
+          
+          const chunk = chunks[currentIndex];
+          const encodedText = encodeURIComponent(chunk);
+          // Usar Google Translate TTS API (gratuita) - usar diferentes endpoints para evitar CORS
+          const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=es&client=tw-ob&q=${encodedText}`;
+          
+          const audio = new Audio(ttsUrl);
+          currentAudio = audio;
+          
+          // Ajustar velocidad (aproximado)
+          audio.playbackRate = speed;
+          
+          audio.onended = () => {
+            if (!isPaused) {
+              currentIndex++;
+              playNextChunk();
+            }
+          };
+          
+          audio.onerror = (e) => {
+            console.error('Error reproduciendo audio:', e);
+            // Si hay error, intentar con el siguiente chunk o terminar
+            if (currentIndex < chunks.length - 1) {
+              currentIndex++;
+              setTimeout(() => playNextChunk(), 500);
+            } else {
+              updateReadStatus(chapterId, 'Error al leer');
+              isReading = false;
+              currentReadingChapterId = null;
+              updateReadButton(chapterId, 'play');
+              currentAudio = null;
+              audioQueue = [];
+            }
+          };
+          
+          audio.onplay = () => {
+            isPaused = false;
+            updateReadStatus(chapterId, `Leyendo... (${currentIndex + 1}/${chunks.length})`);
+          };
+          
+          audio.onpause = () => {
+            isPaused = true;
+          };
+          
+          // Guardar referencia para pausar/reanudar
+          audioQueue.push(audio);
+          
+          audio.play().catch(err => {
+            console.error('Error al reproducir:', err);
+            // Si es error de CORS o similar, mostrar mensaje más claro
+            if (err.name === 'NotAllowedError' || err.message.includes('CORS')) {
+              updateReadStatus(chapterId, 'Error: Permisos o restricciones del navegador');
+            } else {
+              updateReadStatus(chapterId, 'Error al iniciar lectura');
+            }
+            isReading = false;
+            currentReadingChapterId = null;
+            updateReadButton(chapterId, 'play');
+            currentAudio = null;
+            audioQueue = [];
+          });
+        }
+        
+        // Iniciar reproducción
+        playNextChunk();
+        
+      } catch (error) {
+        console.error('Error con Google TTS:', error);
+        updateReadStatus(chapterId, 'Error al leer');
+        isReading = false;
+        currentReadingChapterId = null;
+        updateReadButton(chapterId, 'play');
+        currentAudio = null;
+        audioQueue = [];
+      }
     }
 
     // Función para obtener el texto del capítulo sin HTML
@@ -1715,6 +1846,9 @@
           currentReadingChapterId = null;
           updateReadButton(chapterId, 'play');
         }
+      } else if (useGoogleTTS) {
+        // Usar Google TTS API como fallback
+        readWithGoogleTTS(text, speed, chapterId);
       } else {
         // Usar Web Speech API (móviles y fallback desktop)
         try {
@@ -1761,8 +1895,16 @@
             }
           }
           
-          // Función para iniciar la lectura
-          function startSpeech() {
+          // Función para iniciar la lectura con reintentos
+          function startSpeech(attempt = 1) {
+            if (attempt > 3) {
+              // Después de 3 intentos, usar Google TTS como fallback
+              console.log('Web Speech API falló después de 3 intentos, usando Google TTS');
+              useGoogleTTS = true;
+              readWithGoogleTTS(text, speed, chapterId);
+              return;
+            }
+            
             currentUtterance = new SpeechSynthesisUtterance(text);
             
             // Configurar propiedades del utterance
@@ -1793,7 +1935,7 @@
             
             // Event handlers
             currentUtterance.onstart = () => {
-              console.log('Lectura iniciada');
+              console.log('Lectura iniciada con Web Speech API');
               updateReadStatus(chapterId, 'Leyendo...');
             };
             
@@ -1810,29 +1952,50 @@
             };
             
             currentUtterance.onerror = (event) => {
-              console.error('Error en lectura:', event);
-              isReading = false;
-              currentReadingChapterId = null;
-              updateReadButton(chapterId, 'play');
+              console.error('Error en lectura (intento ' + attempt + '):', event);
               
-              let errorMsg = 'Error al leer';
-              if (event.error === 'not-allowed') {
-                errorMsg = 'Permiso denegado. Verifica los permisos del navegador.';
-              } else if (event.error === 'network') {
-                errorMsg = 'Error de red. Verifica tu conexión.';
+              // Si es un error recuperable, intentar de nuevo
+              if (attempt < 3 && (event.error === 'network' || event.error === 'synthesis-failed')) {
+                console.log('Reintentando lectura...');
+                setTimeout(() => {
+                  speechSynthesis.cancel();
+                  startSpeech(attempt + 1);
+                }, 500);
+                return;
               }
               
-              updateReadStatus(chapterId, errorMsg);
-              currentUtterance = null;
+              // Si no es recuperable o ya intentamos 3 veces, usar Google TTS
+              console.log('Cambiando a Google TTS como fallback');
+              useGoogleTTS = true;
+              readWithGoogleTTS(text, speed, chapterId);
             };
             
-            // Iniciar la lectura
-            speechSynthesis.speak(currentUtterance);
+            // Intentar iniciar la lectura
+            try {
+              speechSynthesis.speak(currentUtterance);
+              
+              // Verificar si realmente se inició (algunos navegadores no disparan eventos)
+              setTimeout(() => {
+                if (isReading && !speechSynthesis.speaking && attempt < 3) {
+                  console.log('La lectura no se inició, reintentando...');
+                  speechSynthesis.cancel();
+                  startSpeech(attempt + 1);
+                }
+              }, 1000);
+            } catch (e) {
+              console.error('Error al iniciar speechSynthesis:', e);
+              if (attempt < 3) {
+                setTimeout(() => startSpeech(attempt + 1), 500);
+              } else {
+                useGoogleTTS = true;
+                readWithGoogleTTS(text, speed, chapterId);
+              }
+            }
           }
           
           // Pequeña pausa para asegurar que cancel() se procese (especialmente en móviles)
           // Esto ayuda especialmente en iOS donde el speechSynthesis necesita tiempo
-          setTimeout(startSpeech, 100);
+          setTimeout(() => startSpeech(1), 100);
         } catch (error) {
           console.error('Error al iniciar lectura:', error);
           isReading = false;
@@ -1855,6 +2018,19 @@
           }
           updateReadButton(currentReadingChapterId, 'resume');
           updateReadStatus(currentReadingChapterId, 'Pausado - Click para reanudar');
+        } else if (useGoogleTTS) {
+          // Google TTS - pausar/reanudar audio
+          if (currentAudio && !currentAudio.paused) {
+            currentAudio.pause();
+            updateReadButton(currentReadingChapterId, 'resume');
+            updateReadStatus(currentReadingChapterId, 'Pausado');
+          } else if (currentAudio && currentAudio.paused) {
+            currentAudio.play().catch(err => {
+              console.error('Error al reanudar:', err);
+            });
+            updateReadButton(currentReadingChapterId, 'pause');
+            updateReadStatus(currentReadingChapterId, 'Leyendo...');
+          }
         } else {
           // Web Speech API soporta pause/resume
           if (speechSynthesis.speaking && !speechSynthesis.paused) {
@@ -1874,6 +2050,13 @@
     function stopReading() {
       if (useResponsiveVoice) {
         responsiveVoice.cancel();
+      } else if (useGoogleTTS) {
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+          currentAudio = null;
+        }
+        audioQueue = [];
       } else {
         speechSynthesis.cancel();
       }
@@ -2177,3 +2360,4 @@
   </script>
 </body>
 </html>
+
