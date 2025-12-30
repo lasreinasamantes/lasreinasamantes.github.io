@@ -292,10 +292,11 @@
       transition: all 0.3s ease;
       font-family: 'Playfair Display', 'Cormorant Garamond', serif;
       font-size: 18px;
-      font-weight: 500;
+      font-weight: 600;
       position: relative;
       letter-spacing: 0.5px;
-      text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.3);
+      text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .chapter-link:hover {
@@ -306,14 +307,14 @@
     }
 
     .chapter-link.active {
-      background: rgba(44, 95, 141, 0.25);
-      color: #2c5f8d;
+      background: rgba(44, 95, 141, 0.35);
+      color: #1e4a6b;
       border-left: 5px solid #2c5f8d;
       font-weight: 700;
       box-shadow: inset 5px 0 0 #2c5f8d, 0 2px 8px rgba(0, 0, 0, 0.2);
       padding-left: 32px;
       font-size: 19px;
-      text-shadow: 1px 1px 4px rgba(255, 255, 255, 0.5);
+      text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.8);
     }
 
     .chapter-link.active::before {
@@ -852,6 +853,8 @@
       .sidebar {
         transform: translateX(-100%);
         transition: transform 0.3s ease;
+        width: 85%;
+        max-width: 320px;
       }
 
       .sidebar.open {
@@ -872,6 +875,40 @@
 
       .chapter-content {
         font-size: 18px;
+      }
+
+      /* Mejorar visibilidad de enlaces en móvil */
+      .chapter-link {
+        color: #1e4a6b;
+        font-weight: 700;
+        font-size: 19px;
+        background: rgba(255, 255, 255, 0.25);
+        text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.9);
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        padding: 22px 24px;
+      }
+
+      .chapter-link:hover {
+        background: rgba(255, 255, 255, 0.35);
+        color: #1e4a6b;
+        text-shadow: 2px 2px 6px rgba(255, 255, 255, 1);
+      }
+
+      .chapter-link.active {
+        background: rgba(255, 255, 255, 0.4);
+        color: #1e4a6b;
+        font-weight: 800;
+        text-shadow: 2px 2px 6px rgba(255, 255, 255, 1);
+        border-left: 6px solid #1e4a6b;
+        box-shadow: inset 6px 0 0 #1e4a6b, 0 3px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .sidebar-header {
+        padding: 24px 20px;
+      }
+
+      .sidebar-header h1 {
+        font-size: 22px;
       }
 
       .mobile-menu-toggle {
@@ -1518,11 +1555,24 @@
     
     // Detectar qué sistema de TTS está disponible
     function initTTS() {
-      // Intentar usar ResponsiveVoice primero (mejor calidad)
-      if (typeof responsiveVoice !== 'undefined' && responsiveVoice) {
-        useResponsiveVoice = true;
-        console.log('Usando ResponsiveVoice para lectura');
-        return true;
+      // En móviles, usar Web Speech API directamente (más confiable)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // En móviles, usar Web Speech API
+        if ('speechSynthesis' in window) {
+          speechSynthesis = window.speechSynthesis;
+          useResponsiveVoice = false;
+          console.log('Dispositivo móvil detectado - Usando Web Speech API');
+          return true;
+        }
+      } else {
+        // En desktop, intentar ResponsiveVoice primero (mejor calidad)
+        if (typeof responsiveVoice !== 'undefined' && responsiveVoice) {
+          useResponsiveVoice = true;
+          console.log('Usando ResponsiveVoice para lectura');
+          return true;
+        }
       }
       
       // Fallback a Web Speech API
@@ -1626,17 +1676,33 @@
         speechSynthesis.cancel();
         currentUtterance = new SpeechSynthesisUtterance(text);
         
-        // Configurar voz en español
-        const voices = speechSynthesis.getVoices();
-        const spanishVoice = voices.find(voice => 
-          voice.lang.startsWith('es') || 
-          voice.name.toLowerCase().includes('spanish') ||
-          voice.name.toLowerCase().includes('español')
-        );
-        
-        if (spanishVoice) {
-          currentUtterance.voice = spanishVoice;
+        // Función para configurar la voz en español
+        function setSpanishVoice() {
+          const voices = speechSynthesis.getVoices();
+          if (voices.length > 0) {
+            const spanishVoice = voices.find(voice => 
+              voice.lang.startsWith('es') || 
+              voice.name.toLowerCase().includes('spanish') ||
+              voice.name.toLowerCase().includes('español')
+            );
+            
+            if (spanishVoice) {
+              currentUtterance.voice = spanishVoice;
+            }
+          }
         }
+        
+        // Intentar obtener voces (puede requerir esperar en algunos navegadores)
+        setSpanishVoice();
+        
+        // Si no hay voces disponibles, esperar a que se carguen
+        if (speechSynthesis.getVoices().length === 0) {
+          speechSynthesis.onvoiceschanged = () => {
+            setSpanishVoice();
+            speechSynthesis.onvoiceschanged = null; // Limpiar después de usar
+          };
+        }
+        
         currentUtterance.lang = 'es-ES';
         currentUtterance.rate = speed;
         currentUtterance.pitch = 1;
@@ -2011,6 +2077,3 @@
   </script>
 </body>
 </html>
-
-
-
