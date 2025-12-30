@@ -11,7 +11,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=Playfair+Display:wght@400;700&family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://code.responsivevoice.org/responsivevoice.js?key=8Z8qJZqK" defer></script>
   <style>
     :root {
       --bg-primary: #f5f1e8;
@@ -442,91 +441,40 @@
       background: var(--accent);
     }
 
-    /* Controles de lectura */
-    .read-controls {
+    /* Reproductor de audio */
+    .audio-player {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 12px;
       margin-top: 24px;
-      padding: 16px 24px;
+      padding: 20px 24px;
       background: var(--accent-lighter);
       border-radius: 12px;
       border: 2px solid var(--accent-light);
     }
 
-    .read-button {
-      padding: 12px 24px;
-      font-size: 16px;
-      font-weight: 600;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: 'Cormorant Garamond', serif;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .read-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
-    }
-
-    .read-button:active {
-      transform: translateY(0);
-    }
-
-    .read-button.pause {
-      background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
-    }
-
-    .read-button.stop {
-      background: linear-gradient(135deg, #dc3545 0%, #e57373 100%);
-    }
-
-    .read-status {
-      font-size: 14px;
-      color: var(--text-secondary);
-      font-family: 'Cormorant Garamond', serif;
-      font-style: italic;
-    }
-
-    .read-status.active {
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .read-speed-control {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-left: auto;
-    }
-
-    .read-speed-label {
-      font-size: 14px;
-      color: var(--text-secondary);
-      font-family: 'Cormorant Garamond', serif;
-    }
-
-    .read-speed-select {
-      padding: 6px 12px;
-      border: 2px solid var(--border);
-      border-radius: 6px;
-      background: var(--bg-card);
-      color: var(--text-primary);
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 14px;
-      cursor: pointer;
+    .audio-player audio {
+      width: 100%;
+      height: 40px;
       outline: none;
     }
 
-    .read-speed-select:focus {
-      border-color: var(--accent);
+    .audio-player audio::-webkit-media-controls-panel {
+      background-color: var(--bg-paper);
+    }
+
+    .audio-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .audio-info i {
+      color: var(--accent);
+      font-size: 18px;
     }
 
     .chapter-content {
@@ -1121,10 +1069,13 @@
         // Columna B (1): Contenido  
         // Columna C (2): Visible (x o vacío)
         // Columna D (3): Fecha (DD/MM/AAAA)
+        // Columna E (4): Clave (password)
+        // Columna F (5): Audio (link al archivo de audio)
         let titleColIndex = 0;
         let contentColIndex = 1;
         const visibleColIndex = 2; // Columna C
         const fechaColIndex = 3;   // Columna D
+        const audioColIndex = 5;   // Columna F
         
         // Analizar las primeras filas para determinar la estructura
         for (let sampleRow = startRow; sampleRow < Math.min(startRow + 5, rows.length); sampleRow++) {
@@ -1218,11 +1169,18 @@
               fecha = row[fechaColIndex].v.toString().trim();
             }
             
+            // Obtener link de audio (columna F)
+            let audioUrl = '';
+            if (row[audioColIndex] && row[audioColIndex].v) {
+              audioUrl = row[audioColIndex].v.toString().trim();
+            }
+            
             chapters.push({
               id: `chapter-${chapters.length + 1}`,
               title: title,
               content: content || 'Sin contenido disponible.',
-              fecha: fecha
+              fecha: fecha,
+              audioUrl: audioUrl
             });
           }
         }
@@ -1318,44 +1276,226 @@
         title.className = 'chapter-title';
         title.textContent = chapter.title;
         
-        // Controles de lectura
-        const readControls = document.createElement('div');
-        readControls.className = 'read-controls';
-        readControls.id = `readControls-${chapter.id}`;
-        
-        const readButton = document.createElement('button');
-        readButton.className = 'read-button';
-        readButton.id = `readButton-${chapter.id}`;
-        readButton.innerHTML = '<i class="fas fa-play"></i> Leer capítulo';
-        readButton.onclick = () => toggleReadChapter(chapter.id);
-        
-        const readStatus = document.createElement('span');
-        readStatus.className = 'read-status';
-        readStatus.id = `readStatus-${chapter.id}`;
-        readStatus.textContent = '';
-        
-        const speedControl = document.createElement('div');
-        speedControl.className = 'read-speed-control';
-        const speedLabel = document.createElement('span');
-        speedLabel.className = 'read-speed-label';
-        speedLabel.textContent = 'Velocidad:';
-        const speedSelect = document.createElement('select');
-        speedSelect.className = 'read-speed-select';
-        speedSelect.id = `speedSelect-${chapter.id}`;
-        speedSelect.innerHTML = `
-          <option value="0.5">0.5x</option>
-          <option value="0.75">0.75x</option>
-          <option value="1" selected>1x</option>
-          <option value="1.25">1.25x</option>
-          <option value="1.5">1.5x</option>
-          <option value="2">2x</option>
-        `;
-        speedControl.appendChild(speedLabel);
-        speedControl.appendChild(speedSelect);
-        
-        readControls.appendChild(readButton);
-        readControls.appendChild(readStatus);
-        readControls.appendChild(speedControl);
+        // Reproductor de audio (solo si hay URL de audio)
+        let audioPlayer = null;
+        if (chapter.audioUrl && chapter.audioUrl.trim() !== '') {
+          // Detectar si es SoundCloud
+          const isSoundCloud = chapter.audioUrl.includes('soundcloud.com');
+          
+          if (isSoundCloud) {
+            // Para SoundCloud, usar embed
+            audioPlayer = document.createElement('div');
+            audioPlayer.className = 'audio-player';
+            audioPlayer.id = `audioPlayer-${chapter.id}`;
+            
+            const audioInfo = document.createElement('div');
+            audioInfo.className = 'audio-info';
+            audioInfo.innerHTML = '<i class="fas fa-headphones"></i> <span>Audio del capítulo (SoundCloud)</span>';
+            
+            // Crear iframe de SoundCloud
+            const soundcloudFrame = document.createElement('iframe');
+            soundcloudFrame.width = '100%';
+            soundcloudFrame.height = '166';
+            soundcloudFrame.scrolling = 'no';
+            soundcloudFrame.frameBorder = 'no';
+            soundcloudFrame.allow = 'autoplay';
+            
+            // Limpiar el URL de SoundCloud (remover parámetros de tracking)
+            const cleanUrl = chapter.audioUrl.split('?')[0];
+            soundcloudFrame.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(cleanUrl)}&color=%234a90e2&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`;
+            
+            audioPlayer.appendChild(audioInfo);
+            audioPlayer.appendChild(soundcloudFrame);
+          } else {
+            // Para otros servicios, usar el reproductor de audio HTML5
+            // Función para extraer el ID de Google Drive
+            function extractGoogleDriveId(url) {
+            // Si ya es un link directo con ID, extraerlo
+            if (url.includes('uc?export=') || url.includes('id=')) {
+              const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+              if (idMatch && idMatch[1]) {
+                return idMatch[1];
+              }
+            }
+            
+            // Extraer el ID del archivo de Google Drive
+            // Formato: https://drive.google.com/file/d/FILE_ID/view
+            // o: https://drive.google.com/open?id=FILE_ID
+            // o: https://drive.google.com/file/d/FILE_ID/edit
+            let fileId = null;
+            
+            // Intentar extraer de diferentes formatos
+            const patterns = [
+              /\/file\/d\/([a-zA-Z0-9_-]+)/,  // /file/d/FILE_ID/view o /file/d/FILE_ID/edit
+              /[?&]id=([a-zA-Z0-9_-]+)/,      // ?id=FILE_ID o &id=FILE_ID
+              /\/d\/([a-zA-Z0-9_-]+)/,        // /d/FILE_ID
+              /drive\.google\.com\/.*[\/=]([a-zA-Z0-9_-]{25,})/  // Cualquier ID largo de Google Drive
+            ];
+            
+            for (const pattern of patterns) {
+              const match = url.match(pattern);
+              if (match && match[1] && match[1].length >= 25) { // Los IDs de Google Drive tienen al menos 25 caracteres
+                fileId = match[1];
+                break;
+              }
+            }
+            
+            return fileId;
+          }
+          
+          const fileId = extractGoogleDriveId(chapter.audioUrl);
+          
+          audioPlayer = document.createElement('div');
+          audioPlayer.className = 'audio-player';
+          audioPlayer.id = `audioPlayer-${chapter.id}`;
+          
+          const audioInfo = document.createElement('div');
+          audioInfo.className = 'audio-info';
+          audioInfo.innerHTML = '<i class="fas fa-headphones"></i> <span>Audio del capítulo</span>';
+          
+          const audio = document.createElement('audio');
+          audio.controls = true;
+          audio.preload = 'none'; // No precargar, lo haremos manualmente
+          audio.id = `audio-${chapter.id}`;
+          
+          // Función para cargar audio desde Google Drive usando proxy público
+          async function loadAudioFromGoogleDrive(fileId) {
+            try {
+              audioInfo.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Cargando audio...</span>';
+              
+              // Usar servicio proxy público para Google Drive
+              // Este servicio permite acceder a archivos de Google Drive sin problemas de CORS
+              const proxyUrls = [
+                `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`,
+                `https://docs.google.com/uc?export=download&id=${fileId}&confirm=t`,
+                `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`
+              ];
+              
+              let audioBlob = null;
+              let lastError = null;
+              
+              for (const downloadUrl of proxyUrls) {
+                try {
+                  console.log('Intentando descargar audio desde:', downloadUrl);
+                  
+                  const response = await fetch(downloadUrl, {
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'omit',
+                    redirect: 'follow'
+                  });
+                  
+                  if (response.ok) {
+                    const contentType = response.headers.get('content-type');
+                    // Verificar que sea un archivo de audio
+                    if (contentType && contentType.startsWith('audio/')) {
+                      audioBlob = await response.blob();
+                      console.log('Audio descargado correctamente, tamaño:', audioBlob.size, 'tipo:', contentType);
+                      break;
+                    } else if (response.headers.get('content-type')?.includes('text/html')) {
+                      // Google Drive puede devolver una página HTML en lugar del archivo
+                      console.warn('Google Drive devolvió HTML en lugar del archivo. El archivo puede requerir confirmación de descarga.');
+                      lastError = 'El archivo requiere confirmación de descarga en Google Drive';
+                      continue;
+                    } else {
+                      audioBlob = await response.blob();
+                      if (audioBlob.size > 1000) { // Si el blob es mayor a 1KB, probablemente es el archivo
+                        console.log('Audio descargado (tipo no detectado), tamaño:', audioBlob.size);
+                        break;
+                      }
+                    }
+                  } else {
+                    console.warn('Error en respuesta:', response.status, response.statusText);
+                    lastError = `Error ${response.status}: ${response.statusText}`;
+                  }
+                } catch (fetchError) {
+                  console.warn('Error al descargar:', fetchError);
+                  lastError = fetchError.message;
+                  continue;
+                }
+              }
+              
+              if (audioBlob && audioBlob.size > 1000) {
+                // Crear URL del blob para reproducir
+                const blobUrl = URL.createObjectURL(audioBlob);
+                audio.src = blobUrl;
+                
+                // Limpiar el blob URL cuando el audio termine o se cierre
+                audio.addEventListener('ended', () => {
+                  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                }, { once: true });
+                
+                audioInfo.innerHTML = '<i class="fas fa-headphones"></i> <span>Audio del capítulo</span>';
+                audioInfo.style.color = '';
+                console.log('Audio listo para reproducir');
+              } else {
+                throw new Error(lastError || 'No se pudo descargar el archivo de audio. Considera usar Archive.org, SoundCloud u otro servicio de hosting.');
+              }
+            } catch (error) {
+              console.error('Error al cargar audio:', error);
+              audioInfo.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <span>Error al cargar el audio. Google Drive bloquea el acceso directo. Usa Archive.org, SoundCloud u otro servicio de hosting público.</span>';
+              audioInfo.style.color = '#dc3545';
+            }
+          }
+          
+          // Detectar el tipo de servicio y cargar apropiadamente
+          if (fileId && typeof fileId === 'string') {
+            // Es Google Drive - intentar con método especial
+            loadAudioFromGoogleDrive(fileId);
+          } else if (chapter.audioUrl.includes('archive.org') || 
+                     chapter.audioUrl.includes('soundcloud.com') ||
+                     chapter.audioUrl.includes('dropbox.com') ||
+                     chapter.audioUrl.includes('github.com') ||
+                     chapter.audioUrl.includes('raw.githubusercontent.com') ||
+                     chapter.audioUrl.includes('netlify.app') ||
+                     chapter.audioUrl.includes('vercel.app') ||
+                     chapter.audioUrl.startsWith('http') && !chapter.audioUrl.includes('drive.google.com')) {
+            // Es otro servicio con link directo - reproducir directamente
+            audio.src = chapter.audioUrl;
+            audio.crossOrigin = 'anonymous';
+            
+            audio.onerror = function() {
+              console.error('Error al cargar el audio:', chapter.audioUrl);
+              audioInfo.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <span>Error al cargar el audio. Verifica que el link sea accesible públicamente.</span>';
+              audioInfo.style.color = '#dc3545';
+            };
+            
+            audio.onloadedmetadata = function() {
+              console.log('Audio cargado correctamente:', chapter.audioUrl);
+              audioInfo.innerHTML = '<i class="fas fa-headphones"></i> <span>Audio del capítulo</span>';
+              audioInfo.style.color = '';
+            };
+            
+            audio.onloadstart = function() {
+              audioInfo.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Cargando audio...</span>';
+            };
+          } else {
+            // Link desconocido - intentar directamente
+            audio.src = chapter.audioUrl;
+            audio.crossOrigin = 'anonymous';
+            
+            audio.onerror = function() {
+              console.error('Error al cargar el audio:', chapter.audioUrl);
+              audioInfo.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <span>Error al cargar el audio</span>';
+              audioInfo.style.color = '#dc3545';
+            };
+            
+            audio.onloadedmetadata = function() {
+              console.log('Audio cargado correctamente:', chapter.audioUrl);
+              audioInfo.innerHTML = '<i class="fas fa-headphones"></i> <span>Audio del capítulo</span>';
+              audioInfo.style.color = '';
+            };
+            
+            audio.onloadstart = function() {
+              audioInfo.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Cargando audio...</span>';
+            };
+          }
+          
+          // Agregar el reproductor de audio al contenedor
+          audioPlayer.appendChild(audioInfo);
+          audioPlayer.appendChild(audio);
+          }
+        }
         
         const content = document.createElement('div');
         content.className = 'chapter-content';
@@ -1395,7 +1535,10 @@
         }
         
         section.appendChild(title);
-        section.appendChild(readControls);
+        // Solo agregar el reproductor de audio si existe
+        if (audioPlayer) {
+          section.appendChild(audioPlayer);
+        }
         section.appendChild(content);
         contentWrapper.appendChild(section);
       });
@@ -1545,599 +1688,18 @@
       }
     }
 
-    // Variables para el sistema de lectura
-    let isReading = false;
-    let currentReadingChapterId = null;
-    let readingTimeout = null;
-    let useResponsiveVoice = false;
-    let useGoogleTTS = false; // Fallback usando Google TTS API
-    let speechSynthesis = null;
-    let currentUtterance = null;
-    let currentAudio = null; // Para Google TTS fallback
-    let audioQueue = []; // Cola de audio para textos largos
-    
-    // Detectar qué sistema de TTS está disponible
-    function initTTS() {
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      // Resetear flags
-      useResponsiveVoice = false;
-      useGoogleTTS = false;
-      
-      // En desktop, intentar ResponsiveVoice primero (mejor calidad)
-      if (!isMobile && typeof responsiveVoice !== 'undefined' && responsiveVoice) {
-        useResponsiveVoice = true;
-        console.log('Usando ResponsiveVoice para lectura');
-        return true;
-      }
-      
-      // Intentar Web Speech API (funciona en desktop y móviles)
-      if ('speechSynthesis' in window) {
-        speechSynthesis = window.speechSynthesis;
-        useResponsiveVoice = false;
-        useGoogleTTS = false;
-        console.log(isMobile ? 'Dispositivo móvil - Usando Web Speech API' : 'Usando Web Speech API para lectura');
-        
-        // Intentar activar el servicio obteniendo voces
-        try {
-          const voices = speechSynthesis.getVoices();
-          if (voices.length > 0) {
-            console.log('Voces disponibles:', voices.length);
-          }
-        } catch (e) {
-          console.warn('Error al obtener voces:', e);
-        }
-        
-        return true;
-      }
-      
-      // Si Web Speech API no está disponible, usar Google TTS como último recurso
-      // Google TTS siempre está disponible (es una API pública)
-      useGoogleTTS = true;
-      console.log('Usando Google TTS API como fallback');
-      return true;
-    }
-    
-    // Función para usar Google TTS API (fallback gratuito)
-    async function readWithGoogleTTS(text, speed, chapterId) {
-      try {
-        // Dividir texto en chunks de máximo 200 caracteres (límite de Google TTS)
-        const maxChunkLength = 200;
-        const chunks = [];
-        const sentences = text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
-        
-        let currentChunk = '';
-        for (const sentence of sentences) {
-          if ((currentChunk + sentence).length <= maxChunkLength) {
-            currentChunk += sentence;
-          } else {
-            if (currentChunk) chunks.push(currentChunk.trim());
-            // Si una oración es muy larga, dividirla
-            if (sentence.length > maxChunkLength) {
-              const words = sentence.split(' ');
-              let wordChunk = '';
-              for (const word of words) {
-                if ((wordChunk + ' ' + word).length <= maxChunkLength) {
-                  wordChunk += (wordChunk ? ' ' : '') + word;
-                } else {
-                  if (wordChunk) chunks.push(wordChunk.trim());
-                  wordChunk = word;
-                }
-              }
-              if (wordChunk) currentChunk = wordChunk;
-            } else {
-              currentChunk = sentence;
-            }
-          }
-        }
-        if (currentChunk) chunks.push(currentChunk.trim());
-        
-        // Si no hay chunks, usar el texto completo (limitado)
-        if (chunks.length === 0) chunks.push(text.substring(0, maxChunkLength));
-        
-        console.log(`Texto dividido en ${chunks.length} chunks para Google TTS`);
-        
-        // Crear cola de audio
-        audioQueue = [];
-        let currentIndex = 0;
-        let isPaused = false;
-        
-        // Función para reproducir el siguiente chunk
-        function playNextChunk() {
-          if (isPaused) return;
-          
-          if (currentIndex >= chunks.length) {
-            // Terminó la lectura
-            isReading = false;
-            currentReadingChapterId = null;
-            updateReadButton(chapterId, 'play');
-            updateReadStatus(chapterId, 'Lectura completada');
-            setTimeout(() => {
-              updateReadStatus(chapterId, '');
-            }, 2000);
-            currentAudio = null;
-            audioQueue = [];
-            return;
-          }
-          
-          const chunk = chunks[currentIndex];
-          const encodedText = encodeURIComponent(chunk);
-          // Usar Google Translate TTS API (gratuita) - usar diferentes endpoints para evitar CORS
-          const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=es&client=tw-ob&q=${encodedText}`;
-          
-          const audio = new Audio(ttsUrl);
-          currentAudio = audio;
-          
-          // Ajustar velocidad (aproximado)
-          audio.playbackRate = speed;
-          
-          audio.onended = () => {
-            if (!isPaused) {
-              currentIndex++;
-              playNextChunk();
-            }
-          };
-          
-          audio.onerror = (e) => {
-            console.error('Error reproduciendo audio:', e);
-            // Si hay error, intentar con el siguiente chunk o terminar
-            if (currentIndex < chunks.length - 1) {
-              currentIndex++;
-              setTimeout(() => playNextChunk(), 500);
-            } else {
-              updateReadStatus(chapterId, 'Error al leer');
-              isReading = false;
-              currentReadingChapterId = null;
-              updateReadButton(chapterId, 'play');
-              currentAudio = null;
-              audioQueue = [];
-            }
-          };
-          
-          audio.onplay = () => {
-            isPaused = false;
-            updateReadStatus(chapterId, `Leyendo... (${currentIndex + 1}/${chunks.length})`);
-          };
-          
-          audio.onpause = () => {
-            isPaused = true;
-          };
-          
-          // Guardar referencia para pausar/reanudar
-          audioQueue.push(audio);
-          
-          audio.play().catch(err => {
-            console.error('Error al reproducir:', err);
-            // Si es error de CORS o similar, mostrar mensaje más claro
-            if (err.name === 'NotAllowedError' || err.message.includes('CORS')) {
-              updateReadStatus(chapterId, 'Error: Permisos o restricciones del navegador');
-            } else {
-              updateReadStatus(chapterId, 'Error al iniciar lectura');
-            }
-            isReading = false;
-            currentReadingChapterId = null;
-            updateReadButton(chapterId, 'play');
-            currentAudio = null;
-            audioQueue = [];
-          });
-        }
-        
-        // Iniciar reproducción
-        playNextChunk();
-        
-      } catch (error) {
-        console.error('Error con Google TTS:', error);
-        updateReadStatus(chapterId, 'Error al leer');
-        isReading = false;
-        currentReadingChapterId = null;
-        updateReadButton(chapterId, 'play');
-        currentAudio = null;
-        audioQueue = [];
-      }
+    // Función para detener todos los audios al cambiar de capítulo
+    function stopAllAudios() {
+      document.querySelectorAll('audio').forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
     }
 
-    // Función para obtener el texto del capítulo sin HTML
-    function getChapterText(chapterId) {
-      const section = document.getElementById(chapterId);
-      if (!section) return '';
-      
-      const contentDiv = section.querySelector('.chapter-content');
-      if (!contentDiv) return '';
-      
-      // Clonar el contenido para no modificar el original
-      const clone = contentDiv.cloneNode(true);
-      
-      // Remover scripts y estilos
-      const scripts = clone.querySelectorAll('script, style');
-      scripts.forEach(el => el.remove());
-      
-      // Obtener texto plano
-      let text = clone.innerText || clone.textContent || '';
-      
-      // Limpiar el texto (remover múltiples espacios, saltos de línea excesivos)
-      text = text.replace(/\s+/g, ' ').trim();
-      
-      return text;
-    }
-
-    // Función para calcular duración aproximada de la lectura
-    function estimateReadingTime(text, speed) {
-      // Promedio de palabras por minuto según velocidad
-      const wpm = {
-        0.5: 75,
-        0.75: 112,
-        1: 150,
-        1.25: 187,
-        1.5: 225,
-        2: 300
-      };
-      const words = text.split(/\s+/).length;
-      const minutes = words / (wpm[speed] || 150);
-      return minutes * 60 * 1000; // en milisegundos
-    }
-
-    // Función para leer un capítulo
-    function readChapter(chapterId) {
-      // Si ya está leyendo otro capítulo, detenerlo primero
-      if (isReading && currentReadingChapterId !== chapterId) {
-        stopReading();
-      }
-      
-      if (isReading && currentReadingChapterId === chapterId) {
-        // Si ya está leyendo este capítulo, pausar
-        pauseReading();
-        return;
-      }
-      
-      const text = getChapterText(chapterId);
-      if (!text) {
-        alert('No hay contenido para leer en este capítulo.');
-        return;
-      }
-      
-      // Verificar que haya un sistema de TTS disponible
-      const ttsAvailable = initTTS();
-      if (!ttsAvailable) {
-        alert('El servicio de lectura no está disponible en este navegador. Por favor, asegúrate de usar un navegador moderno con soporte para síntesis de voz.');
-        return;
-      }
-      
-      // Obtener velocidad del selector
-      const speedSelect = document.getElementById(`speedSelect-${chapterId}`);
-      const speed = speedSelect ? parseFloat(speedSelect.value) : 1;
-      
-      // Actualizar estado antes de iniciar
-      isReading = true;
-      currentReadingChapterId = chapterId;
-      updateReadButton(chapterId, 'pause');
-      updateReadStatus(chapterId, 'Leyendo...');
-      
-      if (useResponsiveVoice) {
-        // Usar ResponsiveVoice (mejor calidad) - solo en desktop
-        try {
-          responsiveVoice.cancel();
-          const voice = 'Spanish Latin American Female';
-          responsiveVoice.speak(text, voice, {
-            pitch: 1,
-            rate: speed,
-            volume: 1
-          });
-          
-          // Estimar tiempo de lectura para ResponsiveVoice
-          const estimatedTime = estimateReadingTime(text, speed);
-          if (readingTimeout) {
-            clearTimeout(readingTimeout);
-          }
-          readingTimeout = setTimeout(() => {
-            if (isReading && currentReadingChapterId === chapterId) {
-              isReading = false;
-              currentReadingChapterId = null;
-              updateReadButton(chapterId, 'play');
-              updateReadStatus(chapterId, 'Lectura completada');
-              setTimeout(() => {
-                updateReadStatus(chapterId, '');
-              }, 2000);
-            }
-          }, estimatedTime);
-        } catch (error) {
-          console.error('Error con ResponsiveVoice:', error);
-          updateReadStatus(chapterId, 'Error al leer');
-          isReading = false;
-          currentReadingChapterId = null;
-          updateReadButton(chapterId, 'play');
-        }
-      } else if (useGoogleTTS) {
-        // Usar Google TTS API como fallback
-        readWithGoogleTTS(text, speed, chapterId);
-      } else {
-        // Usar Web Speech API (móviles y fallback desktop)
-        try {
-          // Cancelar cualquier lectura anterior
-          speechSynthesis.cancel();
-          
-          // Función para configurar la voz en español
-          function setSpanishVoice(utterance) {
-            try {
-              const voices = speechSynthesis.getVoices();
-              if (voices.length > 0) {
-                // Buscar voz en español (preferir latinoamericana)
-                let spanishVoice = voices.find(voice => 
-                  (voice.lang.startsWith('es-') && voice.lang.includes('419')) || // es-419 es latinoamérica
-                  voice.lang === 'es-MX' ||
-                  voice.lang === 'es-AR' ||
-                  voice.lang === 'es-CO'
-                );
-                
-                // Si no encuentra latinoamericana, buscar cualquier español
-                if (!spanishVoice) {
-                  spanishVoice = voices.find(voice => 
-                    voice.lang.startsWith('es')
-                  );
-                }
-                
-                // Si aún no encuentra, buscar por nombre
-                if (!spanishVoice) {
-                  spanishVoice = voices.find(voice => 
-                    voice.name.toLowerCase().includes('spanish') ||
-                    voice.name.toLowerCase().includes('español')
-                  );
-                }
-                
-                if (spanishVoice) {
-                  utterance.voice = spanishVoice;
-                  console.log('Voz seleccionada:', spanishVoice.name, spanishVoice.lang);
-                } else {
-                  console.warn('No se encontró voz en español, usando voz por defecto');
-                }
-              }
-            } catch (e) {
-              console.error('Error al configurar voz:', e);
-            }
-          }
-          
-          // Función para iniciar la lectura con reintentos
-          function startSpeech(attempt = 1) {
-            if (attempt > 3) {
-              // Después de 3 intentos, usar Google TTS como fallback
-              console.log('Web Speech API falló después de 3 intentos, usando Google TTS');
-              useGoogleTTS = true;
-              readWithGoogleTTS(text, speed, chapterId);
-              return;
-            }
-            
-            currentUtterance = new SpeechSynthesisUtterance(text);
-            
-            // Configurar propiedades del utterance
-            currentUtterance.lang = 'es-ES';
-            currentUtterance.rate = speed;
-            currentUtterance.pitch = 1;
-            currentUtterance.volume = 1;
-            
-            // Intentar obtener voces inmediatamente
-            setSpanishVoice(currentUtterance);
-            
-            // Si no hay voces disponibles, esperar a que se carguen
-            if (speechSynthesis.getVoices().length === 0) {
-              const voicesHandler = () => {
-                setSpanishVoice(currentUtterance);
-                speechSynthesis.onvoiceschanged = null; // Limpiar después de usar
-              };
-              speechSynthesis.onvoiceschanged = voicesHandler;
-              
-              // Timeout de seguridad (algunos navegadores no disparan onvoiceschanged)
-              setTimeout(() => {
-                if (speechSynthesis.onvoiceschanged === voicesHandler) {
-                  speechSynthesis.onvoiceschanged = null;
-                  setSpanishVoice(currentUtterance);
-                }
-              }, 2000);
-            }
-            
-            // Event handlers
-            currentUtterance.onstart = () => {
-              console.log('Lectura iniciada con Web Speech API');
-              updateReadStatus(chapterId, 'Leyendo...');
-            };
-            
-            currentUtterance.onend = () => {
-              console.log('Lectura completada');
-              isReading = false;
-              currentReadingChapterId = null;
-              updateReadButton(chapterId, 'play');
-              updateReadStatus(chapterId, 'Lectura completada');
-              setTimeout(() => {
-                updateReadStatus(chapterId, '');
-              }, 2000);
-              currentUtterance = null;
-            };
-            
-            currentUtterance.onerror = (event) => {
-              console.error('Error en lectura (intento ' + attempt + '):', event);
-              
-              // Si es un error recuperable, intentar de nuevo
-              if (attempt < 3 && (event.error === 'network' || event.error === 'synthesis-failed')) {
-                console.log('Reintentando lectura...');
-                setTimeout(() => {
-                  speechSynthesis.cancel();
-                  startSpeech(attempt + 1);
-                }, 500);
-                return;
-              }
-              
-              // Si no es recuperable o ya intentamos 3 veces, usar Google TTS
-              console.log('Cambiando a Google TTS como fallback');
-              useGoogleTTS = true;
-              readWithGoogleTTS(text, speed, chapterId);
-            };
-            
-            // Intentar iniciar la lectura
-            try {
-              speechSynthesis.speak(currentUtterance);
-              
-              // Verificar si realmente se inició (algunos navegadores no disparan eventos)
-              setTimeout(() => {
-                if (isReading && !speechSynthesis.speaking && attempt < 3) {
-                  console.log('La lectura no se inició, reintentando...');
-                  speechSynthesis.cancel();
-                  startSpeech(attempt + 1);
-                }
-              }, 1000);
-            } catch (e) {
-              console.error('Error al iniciar speechSynthesis:', e);
-              if (attempt < 3) {
-                setTimeout(() => startSpeech(attempt + 1), 500);
-              } else {
-                useGoogleTTS = true;
-                readWithGoogleTTS(text, speed, chapterId);
-              }
-            }
-          }
-          
-          // Pequeña pausa para asegurar que cancel() se procese (especialmente en móviles)
-          // Esto ayuda especialmente en iOS donde el speechSynthesis necesita tiempo
-          setTimeout(() => startSpeech(1), 100);
-        } catch (error) {
-          console.error('Error al iniciar lectura:', error);
-          isReading = false;
-          currentReadingChapterId = null;
-          updateReadButton(chapterId, 'play');
-          updateReadStatus(chapterId, 'Error al iniciar lectura');
-        }
-      }
-    }
-
-    // Función para pausar la lectura
-    function pauseReading() {
-      if (isReading && currentReadingChapterId) {
-        if (useResponsiveVoice) {
-          // ResponsiveVoice puede no soportar pause/resume en versión gratuita
-          responsiveVoice.cancel();
-          if (readingTimeout) {
-            clearTimeout(readingTimeout);
-            readingTimeout = null;
-          }
-          updateReadButton(currentReadingChapterId, 'resume');
-          updateReadStatus(currentReadingChapterId, 'Pausado - Click para reanudar');
-        } else if (useGoogleTTS) {
-          // Google TTS - pausar/reanudar audio
-          if (currentAudio && !currentAudio.paused) {
-            currentAudio.pause();
-            updateReadButton(currentReadingChapterId, 'resume');
-            updateReadStatus(currentReadingChapterId, 'Pausado');
-          } else if (currentAudio && currentAudio.paused) {
-            currentAudio.play().catch(err => {
-              console.error('Error al reanudar:', err);
-            });
-            updateReadButton(currentReadingChapterId, 'pause');
-            updateReadStatus(currentReadingChapterId, 'Leyendo...');
-          }
-        } else {
-          // Web Speech API soporta pause/resume
-          if (speechSynthesis.speaking && !speechSynthesis.paused) {
-            speechSynthesis.pause();
-            updateReadButton(currentReadingChapterId, 'resume');
-            updateReadStatus(currentReadingChapterId, 'Pausado');
-          } else if (speechSynthesis.paused) {
-            speechSynthesis.resume();
-            updateReadButton(currentReadingChapterId, 'pause');
-            updateReadStatus(currentReadingChapterId, 'Leyendo...');
-          }
-        }
-      }
-    }
-
-    // Función para detener la lectura
-    function stopReading() {
-      if (useResponsiveVoice) {
-        responsiveVoice.cancel();
-      } else if (useGoogleTTS) {
-        if (currentAudio) {
-          currentAudio.pause();
-          currentAudio.currentTime = 0;
-          currentAudio = null;
-        }
-        audioQueue = [];
-      } else {
-        speechSynthesis.cancel();
-      }
-      
-      isReading = false;
-      
-      if (currentReadingChapterId) {
-        updateReadButton(currentReadingChapterId, 'play');
-        updateReadStatus(currentReadingChapterId, '');
-      }
-      
-      if (readingTimeout) {
-        clearTimeout(readingTimeout);
-        readingTimeout = null;
-      }
-      
-      currentReadingChapterId = null;
-      currentUtterance = null;
-    }
-
-    // Función para alternar lectura (play/pause)
-    function toggleReadChapter(chapterId) {
-      if (isReading && currentReadingChapterId === chapterId) {
-        pauseReading();
-      } else if (isReading && currentReadingChapterId !== chapterId) {
-        stopReading();
-        setTimeout(() => readChapter(chapterId), 100);
-      } else {
-        readChapter(chapterId);
-      }
-    }
-
-    // Actualizar botón de lectura
-    function updateReadButton(chapterId, state) {
-      const button = document.getElementById(`readButton-${chapterId}`);
-      if (!button) return;
-      
-      button.className = 'read-button';
-      
-      if (state === 'play') {
-        button.innerHTML = '<i class="fas fa-play"></i> Leer capítulo';
-      } else if (state === 'pause') {
-        button.innerHTML = '<i class="fas fa-pause"></i> Pausar';
-        button.classList.add('pause');
-      } else if (state === 'resume') {
-        button.innerHTML = '<i class="fas fa-play"></i> Reanudar';
-      } else if (state === 'stop') {
-        button.innerHTML = '<i class="fas fa-stop"></i> Detener';
-        button.classList.add('stop');
-      }
-    }
-
-    // Actualizar estado de lectura
-    function updateReadStatus(chapterId, status) {
-      const statusEl = document.getElementById(`readStatus-${chapterId}`);
-      if (!statusEl) return;
-      
-      statusEl.textContent = status;
-      if (status) {
-        statusEl.classList.add('active');
-      } else {
-        statusEl.classList.remove('active');
-      }
-    }
-
-    // Inicializar TTS cuando la página esté lista
-    window.addEventListener('load', () => {
-      // Esperar un poco para que ResponsiveVoice se cargue si está disponible
-      setTimeout(() => {
-        initTTS();
-      }, 500);
-      
-      // En móviles, especialmente iOS, necesitamos "activar" speechSynthesis
-      // con una interacción del usuario. Hacerlo cuando se carga la página
-      // puede no funcionar, así que lo haremos en el primer clic del botón de lectura
-    });
-
-    // Detener lectura al cambiar de capítulo
+    // Detener todos los audios al cambiar de capítulo
     const originalShowChapter = showChapter;
     showChapter = function(chapterId) {
-      stopReading();
+      stopAllAudios();
       originalShowChapter(chapterId);
     };
 
@@ -2148,6 +1710,73 @@
       sidebar.classList.toggle('open');
       overlay.classList.toggle('open');
     }
+
+    // Navegación con teclado
+    document.addEventListener('keydown', (e) => {
+      const currentIndex = chapters.findIndex(ch => {
+        const section = document.getElementById(ch.id);
+        return section && section.classList.contains('active');
+      });
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        if (currentIndex < chapters.length - 1) {
+          e.preventDefault();
+          showChapter(chapters[currentIndex + 1].id);
+        }
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        if (currentIndex > 0) {
+          e.preventDefault();
+          showChapter(chapters[currentIndex - 1].id);
+        }
+      }
+    });
+
+    // Protección contra copia
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      return false;
+    }, false);
+
+    document.addEventListener('selectstart', function(e) {
+      e.preventDefault();
+      return false;
+    }, false);
+
+    document.addEventListener('dragstart', function(e) {
+      e.preventDefault();
+      return false;
+    }, false);
+
+    // Deshabilitar atajos de teclado para copiar
+    document.addEventListener('keydown', function(e) {
+      // Deshabilitar Ctrl+C, Ctrl+A, Ctrl+V, Ctrl+X, Ctrl+S, Ctrl+P
+      if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || 
+                        e.key === 'a' || e.key === 'A' || 
+                        e.key === 'v' || e.key === 'V' || 
+                        e.key === 'x' || e.key === 'X' || 
+                        e.key === 's' || e.key === 'S' || 
+                        e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Deshabilitar F12 (DevTools)
+      if (e.key === 'F12') {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Deshabilitar Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (código fuente)
+      if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'i' || e.key === 'j')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+        e.preventDefault();
+        return false;
+      }
+    }, false);
 
     // Navegación con teclado
     document.addEventListener('keydown', (e) => {
@@ -2290,6 +1919,151 @@
     // Cargar la clave primero antes de mostrar el login
     async function loadPassword() {
       try {
+        const SHEET_ID = '10IqU3C6Dvr-UJ4hbCo8y0hFwkxwY-vFHwbHpwNJ9CKE';
+        const SHEET_NAME = 'Hoja 1';
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Error al cargar la hoja: ${response.status}`);
+        }
+        const text = await response.text();
+        
+        let jsonMatch = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/s);
+        if (!jsonMatch) {
+          jsonMatch = text.match(/setResponse\((.*)\);/s);
+        }
+        if (!jsonMatch) {
+          const braceStart = text.indexOf('{');
+          const braceEnd = text.lastIndexOf('}');
+          if (braceStart !== -1 && braceEnd !== -1 && braceEnd > braceStart) {
+            jsonMatch = [null, text.substring(braceStart, braceEnd + 1)];
+          }
+        }
+        
+        if (!jsonMatch || !jsonMatch[1]) {
+          throw new Error('No se pudo parsear la respuesta de Google Sheets.');
+        }
+        
+        const data = JSON.parse(jsonMatch[1]);
+        const rows = data.table.rows;
+        
+        // Obtener la clave de la columna E (índice 4), fila 2 (índice 1)
+        if (rows.length > 1) {
+          const passwordRow = rows[1].c;
+          if (passwordRow && passwordRow[4] && passwordRow[4].v) {
+            correctPassword = passwordRow[4].v.toString().trim();
+          }
+        }
+      } catch (error) {
+        console.error('Error al cargar la clave:', error);
+      }
+    }
+
+    // Cargar la clave primero antes de mostrar el login
+
+    document.addEventListener('selectstart', function(e) {
+      e.preventDefault();
+      return false;
+    }, false);
+
+    document.addEventListener('dragstart', function(e) {
+      e.preventDefault();
+      return false;
+    }, false);
+
+    // Deshabilitar atajos de teclado para copiar
+    document.addEventListener('keydown', function(e) {
+      // Deshabilitar Ctrl+C, Ctrl+A, Ctrl+V, Ctrl+X, Ctrl+S, Ctrl+P
+      if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || 
+                        e.key === 'a' || e.key === 'A' || 
+                        e.key === 'v' || e.key === 'V' || 
+                        e.key === 'x' || e.key === 'X' || 
+                        e.key === 's' || e.key === 'S' || 
+                        e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Deshabilitar F12 (DevTools)
+      if (e.key === 'F12') {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Deshabilitar Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (código fuente)
+      if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'i' || e.key === 'j')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+        e.preventDefault();
+        return false;
+      }
+    }, false);
+
+    // Deshabilitar selección de texto
+    document.addEventListener('DOMContentLoaded', function() {
+      const style = document.createElement('style');
+      style.textContent = `
+        ::selection {
+          background: transparent !important;
+          color: inherit !important;
+        }
+        ::-moz-selection {
+          background: transparent !important;
+          color: inherit !important;
+        }
+      `;
+      document.head.appendChild(style);
+    });
+
+    // Deshabilitar arrastrar imágenes
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('img').forEach(img => {
+        img.addEventListener('dragstart', function(e) {
+          e.preventDefault();
+          return false;
+        });
+        img.setAttribute('draggable', 'false');
+      });
+    });
+
+    // Función para manejar el login
+    function handleLogin(event) {
+      event.preventDefault();
+      const passwordInput = document.getElementById('passwordInput');
+      const loginError = document.getElementById('loginError');
+      const enteredPassword = passwordInput.value.trim();
+      
+      if (enteredPassword === correctPassword) {
+        // Clave correcta, autenticar y mostrar contenido
+        document.body.classList.add('authenticated');
+        loginError.classList.remove('show');
+        passwordInput.value = '';
+        
+        // Si aún no se han cargado los capítulos, cargarlos ahora
+        if (chapters.length === 0) {
+          loadChaptersFromSheets();
+        }
+      } else {
+        // Clave incorrecta
+        loginError.classList.add('show');
+        passwordInput.value = '';
+        passwordInput.focus();
+        
+        // Agitar el input
+        passwordInput.style.animation = 'shake 0.5s ease';
+        setTimeout(() => {
+          passwordInput.style.animation = '';
+        }, 500);
+      }
+    }
+
+    // Cargar la clave primero antes de mostrar el login
+    async function loadPassword() {
+      try {
         const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
         const response = await fetch(url);
         const text = await response.text();
@@ -2360,4 +2134,3 @@
   </script>
 </body>
 </html>
-
