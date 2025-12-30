@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=Playfair+Display:wght@400;700&family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://code.responsivevoice.org/responsivevoice.js?key=8Z8qJZqK" defer></script>
   <style>
     :root {
       --bg-primary: #f5f1e8;
@@ -438,6 +439,93 @@
       width: 100px;
       height: 3px;
       background: var(--accent);
+    }
+
+    /* Controles de lectura */
+    .read-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+      padding: 16px 24px;
+      background: var(--accent-lighter);
+      border-radius: 12px;
+      border: 2px solid var(--accent-light);
+    }
+
+    .read-button {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Cormorant Garamond', serif;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .read-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+    }
+
+    .read-button:active {
+      transform: translateY(0);
+    }
+
+    .read-button.pause {
+      background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+    }
+
+    .read-button.stop {
+      background: linear-gradient(135deg, #dc3545 0%, #e57373 100%);
+    }
+
+    .read-status {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+    }
+
+    .read-status.active {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .read-speed-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .read-speed-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .read-speed-select {
+      padding: 6px 12px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 14px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .read-speed-select:focus {
+      border-color: var(--accent);
     }
 
     .chapter-content {
@@ -1193,6 +1281,45 @@
         title.className = 'chapter-title';
         title.textContent = chapter.title;
         
+        // Controles de lectura
+        const readControls = document.createElement('div');
+        readControls.className = 'read-controls';
+        readControls.id = `readControls-${chapter.id}`;
+        
+        const readButton = document.createElement('button');
+        readButton.className = 'read-button';
+        readButton.id = `readButton-${chapter.id}`;
+        readButton.innerHTML = '<i class="fas fa-play"></i> Leer capítulo';
+        readButton.onclick = () => toggleReadChapter(chapter.id);
+        
+        const readStatus = document.createElement('span');
+        readStatus.className = 'read-status';
+        readStatus.id = `readStatus-${chapter.id}`;
+        readStatus.textContent = '';
+        
+        const speedControl = document.createElement('div');
+        speedControl.className = 'read-speed-control';
+        const speedLabel = document.createElement('span');
+        speedLabel.className = 'read-speed-label';
+        speedLabel.textContent = 'Velocidad:';
+        const speedSelect = document.createElement('select');
+        speedSelect.className = 'read-speed-select';
+        speedSelect.id = `speedSelect-${chapter.id}`;
+        speedSelect.innerHTML = `
+          <option value="0.5">0.5x</option>
+          <option value="0.75">0.75x</option>
+          <option value="1" selected>1x</option>
+          <option value="1.25">1.25x</option>
+          <option value="1.5">1.5x</option>
+          <option value="2">2x</option>
+        `;
+        speedControl.appendChild(speedLabel);
+        speedControl.appendChild(speedSelect);
+        
+        readControls.appendChild(readButton);
+        readControls.appendChild(readStatus);
+        readControls.appendChild(speedControl);
+        
         const content = document.createElement('div');
         content.className = 'chapter-content';
         
@@ -1231,6 +1358,7 @@
         }
         
         section.appendChild(title);
+        section.appendChild(readControls);
         section.appendChild(content);
         contentWrapper.appendChild(section);
       });
@@ -1379,6 +1507,290 @@
         modal.classList.remove('active');
       }
     }
+
+    // Variables para el sistema de lectura
+    let isReading = false;
+    let currentReadingChapterId = null;
+    let readingTimeout = null;
+    let useResponsiveVoice = false;
+    let speechSynthesis = null;
+    let currentUtterance = null;
+    
+    // Detectar qué sistema de TTS está disponible
+    function initTTS() {
+      // Intentar usar ResponsiveVoice primero (mejor calidad)
+      if (typeof responsiveVoice !== 'undefined' && responsiveVoice) {
+        useResponsiveVoice = true;
+        console.log('Usando ResponsiveVoice para lectura');
+        return true;
+      }
+      
+      // Fallback a Web Speech API
+      if ('speechSynthesis' in window) {
+        speechSynthesis = window.speechSynthesis;
+        useResponsiveVoice = false;
+        console.log('Usando Web Speech API para lectura (fallback)');
+        return true;
+      }
+      
+      console.error('No hay sistema de TTS disponible');
+      return false;
+    }
+
+    // Función para obtener el texto del capítulo sin HTML
+    function getChapterText(chapterId) {
+      const section = document.getElementById(chapterId);
+      if (!section) return '';
+      
+      const contentDiv = section.querySelector('.chapter-content');
+      if (!contentDiv) return '';
+      
+      // Clonar el contenido para no modificar el original
+      const clone = contentDiv.cloneNode(true);
+      
+      // Remover scripts y estilos
+      const scripts = clone.querySelectorAll('script, style');
+      scripts.forEach(el => el.remove());
+      
+      // Obtener texto plano
+      let text = clone.innerText || clone.textContent || '';
+      
+      // Limpiar el texto (remover múltiples espacios, saltos de línea excesivos)
+      text = text.replace(/\s+/g, ' ').trim();
+      
+      return text;
+    }
+
+    // Función para calcular duración aproximada de la lectura
+    function estimateReadingTime(text, speed) {
+      // Promedio de palabras por minuto según velocidad
+      const wpm = {
+        0.5: 75,
+        0.75: 112,
+        1: 150,
+        1.25: 187,
+        1.5: 225,
+        2: 300
+      };
+      const words = text.split(/\s+/).length;
+      const minutes = words / (wpm[speed] || 150);
+      return minutes * 60 * 1000; // en milisegundos
+    }
+
+    // Función para leer un capítulo con ResponsiveVoice
+    function readChapter(chapterId) {
+      // Si ya está leyendo otro capítulo, detenerlo primero
+      if (isReading && currentReadingChapterId !== chapterId) {
+        stopReading();
+      }
+      
+      if (isReading && currentReadingChapterId === chapterId) {
+        // Si ya está leyendo este capítulo, pausar
+        pauseReading();
+        return;
+      }
+      
+      const text = getChapterText(chapterId);
+      if (!text) {
+        alert('No hay contenido para leer en este capítulo.');
+        return;
+      }
+      
+      // Verificar que haya un sistema de TTS disponible
+      if (!initTTS()) {
+        alert('El servicio de lectura no está disponible en este navegador.');
+        return;
+      }
+      
+      // Obtener velocidad del selector
+      const speedSelect = document.getElementById(`speedSelect-${chapterId}`);
+      const speed = speedSelect ? parseFloat(speedSelect.value) : 1;
+      
+      // Actualizar estado antes de iniciar
+      isReading = true;
+      currentReadingChapterId = chapterId;
+      updateReadButton(chapterId, 'pause');
+      updateReadStatus(chapterId, 'Leyendo...');
+      
+      if (useResponsiveVoice) {
+        // Usar ResponsiveVoice (mejor calidad)
+        responsiveVoice.cancel();
+        const voice = 'Spanish Latin American Female';
+        responsiveVoice.speak(text, voice, {
+          pitch: 1,
+          rate: speed,
+          volume: 1
+        });
+      } else {
+        // Usar Web Speech API (fallback)
+        speechSynthesis.cancel();
+        currentUtterance = new SpeechSynthesisUtterance(text);
+        
+        // Configurar voz en español
+        const voices = speechSynthesis.getVoices();
+        const spanishVoice = voices.find(voice => 
+          voice.lang.startsWith('es') || 
+          voice.name.toLowerCase().includes('spanish') ||
+          voice.name.toLowerCase().includes('español')
+        );
+        
+        if (spanishVoice) {
+          currentUtterance.voice = spanishVoice;
+        }
+        currentUtterance.lang = 'es-ES';
+        currentUtterance.rate = speed;
+        currentUtterance.pitch = 1;
+        currentUtterance.volume = 1;
+        
+        currentUtterance.onend = () => {
+          isReading = false;
+          currentReadingChapterId = null;
+          updateReadButton(chapterId, 'play');
+          updateReadStatus(chapterId, 'Lectura completada');
+          setTimeout(() => {
+            updateReadStatus(chapterId, '');
+          }, 2000);
+        };
+        
+        currentUtterance.onerror = () => {
+          isReading = false;
+          currentReadingChapterId = null;
+          updateReadButton(chapterId, 'play');
+          updateReadStatus(chapterId, 'Error al leer');
+        };
+        
+        speechSynthesis.speak(currentUtterance);
+        return; // Web Speech API maneja onend, no necesitamos timeout
+      }
+      
+      // Estimar tiempo de lectura para ResponsiveVoice (puede no tener eventos)
+      const estimatedTime = estimateReadingTime(text, speed);
+      if (readingTimeout) {
+        clearTimeout(readingTimeout);
+      }
+      readingTimeout = setTimeout(() => {
+        if (isReading && currentReadingChapterId === chapterId) {
+          isReading = false;
+          currentReadingChapterId = null;
+          updateReadButton(chapterId, 'play');
+          updateReadStatus(chapterId, 'Lectura completada');
+          setTimeout(() => {
+            updateReadStatus(chapterId, '');
+          }, 2000);
+        }
+      }, estimatedTime);
+    }
+
+    // Función para pausar la lectura
+    function pauseReading() {
+      if (isReading && currentReadingChapterId) {
+        if (useResponsiveVoice) {
+          // ResponsiveVoice puede no soportar pause/resume en versión gratuita
+          responsiveVoice.cancel();
+          if (readingTimeout) {
+            clearTimeout(readingTimeout);
+            readingTimeout = null;
+          }
+          updateReadButton(currentReadingChapterId, 'resume');
+          updateReadStatus(currentReadingChapterId, 'Pausado - Click para reanudar');
+        } else {
+          // Web Speech API soporta pause/resume
+          if (speechSynthesis.speaking && !speechSynthesis.paused) {
+            speechSynthesis.pause();
+            updateReadButton(currentReadingChapterId, 'resume');
+            updateReadStatus(currentReadingChapterId, 'Pausado');
+          } else if (speechSynthesis.paused) {
+            speechSynthesis.resume();
+            updateReadButton(currentReadingChapterId, 'pause');
+            updateReadStatus(currentReadingChapterId, 'Leyendo...');
+          }
+        }
+      }
+    }
+
+    // Función para detener la lectura
+    function stopReading() {
+      if (useResponsiveVoice) {
+        responsiveVoice.cancel();
+      } else {
+        speechSynthesis.cancel();
+      }
+      
+      isReading = false;
+      
+      if (currentReadingChapterId) {
+        updateReadButton(currentReadingChapterId, 'play');
+        updateReadStatus(currentReadingChapterId, '');
+      }
+      
+      if (readingTimeout) {
+        clearTimeout(readingTimeout);
+        readingTimeout = null;
+      }
+      
+      currentReadingChapterId = null;
+      currentUtterance = null;
+    }
+
+    // Función para alternar lectura (play/pause)
+    function toggleReadChapter(chapterId) {
+      if (isReading && currentReadingChapterId === chapterId) {
+        pauseReading();
+      } else if (isReading && currentReadingChapterId !== chapterId) {
+        stopReading();
+        setTimeout(() => readChapter(chapterId), 100);
+      } else {
+        readChapter(chapterId);
+      }
+    }
+
+    // Actualizar botón de lectura
+    function updateReadButton(chapterId, state) {
+      const button = document.getElementById(`readButton-${chapterId}`);
+      if (!button) return;
+      
+      button.className = 'read-button';
+      
+      if (state === 'play') {
+        button.innerHTML = '<i class="fas fa-play"></i> Leer capítulo';
+      } else if (state === 'pause') {
+        button.innerHTML = '<i class="fas fa-pause"></i> Pausar';
+        button.classList.add('pause');
+      } else if (state === 'resume') {
+        button.innerHTML = '<i class="fas fa-play"></i> Reanudar';
+      } else if (state === 'stop') {
+        button.innerHTML = '<i class="fas fa-stop"></i> Detener';
+        button.classList.add('stop');
+      }
+    }
+
+    // Actualizar estado de lectura
+    function updateReadStatus(chapterId, status) {
+      const statusEl = document.getElementById(`readStatus-${chapterId}`);
+      if (!statusEl) return;
+      
+      statusEl.textContent = status;
+      if (status) {
+        statusEl.classList.add('active');
+      } else {
+        statusEl.classList.remove('active');
+      }
+    }
+
+    // Inicializar TTS cuando la página esté lista
+    window.addEventListener('load', () => {
+      // Esperar un poco para que ResponsiveVoice se cargue si está disponible
+      setTimeout(() => {
+        initTTS();
+      }, 500);
+    });
+
+    // Detener lectura al cambiar de capítulo
+    const originalShowChapter = showChapter;
+    showChapter = function(chapterId) {
+      stopReading();
+      originalShowChapter(chapterId);
+    };
 
     // Toggle sidebar en móvil
     function toggleSidebar() {
@@ -1599,4 +2011,6 @@
   </script>
 </body>
 </html>
+
+
 
