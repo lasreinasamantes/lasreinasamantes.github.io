@@ -977,7 +977,7 @@
       <button class="modal-close" onclick="closeLastChapterModal()">&times;</button>
       <div class="modal-header">
         <div class="modal-title">Actualización de Contenido</div>
-        <div class="modal-subtitle">Nuevos capítulos agregados</div>
+        <div class="modal-subtitle">Capítulos actualizados</div>
       </div>
       <div class="modal-body" id="lastChapterModalBody">
         <!-- Contenido generado dinámicamente -->
@@ -1068,13 +1068,13 @@
         // Columna A (0): Título
         // Columna B (1): Contenido  
         // Columna C (2): Visible (x o vacío)
-        // Columna D (3): Fecha (DD/MM/AAAA)
+        // Columna D (3): Actualizado (x o vacío) - marca capítulos actualizados
         // Columna E (4): Clave (password)
         // Columna F (5): Audio (link al archivo de audio)
         let titleColIndex = 0;
         let contentColIndex = 1;
         const visibleColIndex = 2; // Columna C
-        const fechaColIndex = 3;   // Columna D
+        const actualizadoColIndex = 3;   // Columna D
         const audioColIndex = 5;   // Columna F
         
         // Analizar las primeras filas para determinar la estructura
@@ -1163,10 +1163,11 @@
           
           // Solo agregar capítulos visibles
           if (title && isVisible) {
-            // Obtener fecha (columna D)
-            let fecha = '';
-            if (row[fechaColIndex] && row[fechaColIndex].v) {
-              fecha = row[fechaColIndex].v.toString().trim();
+            // Verificar si el capítulo está actualizado (columna D debe tener "x")
+            let isActualizado = false;
+            if (row[actualizadoColIndex] && row[actualizadoColIndex].v) {
+              const actualizadoValue = row[actualizadoColIndex].v.toString().trim().toLowerCase();
+              isActualizado = actualizadoValue === 'x' || actualizadoValue === 'true' || actualizadoValue === '1';
             }
             
             // Obtener link de audio (columna F)
@@ -1179,7 +1180,7 @@
               id: `chapter-${chapters.length + 1}`,
               title: title,
               content: content || 'Sin contenido disponible.',
-              fecha: fecha,
+              actualizado: isActualizado,
               audioUrl: audioUrl
             });
           }
@@ -1611,46 +1612,14 @@
       }
     }
 
-    // Función para parsear fecha DD/MM/AAAA a objeto Date
-    function parseDate(fechaStr) {
-      if (!fechaStr || fechaStr.trim() === '') return null;
-      
-      const partes = fechaStr.trim().split('/');
-      if (partes.length !== 3) return null;
-      
-      const dia = parseInt(partes[0], 10);
-      const mes = parseInt(partes[1], 10) - 1; // Mes es 0-indexed
-      const año = parseInt(partes[2], 10);
-      
-      if (isNaN(dia) || isNaN(mes) || isNaN(año)) return null;
-      
-      return new Date(año, mes, dia);
-    }
-    
-    // Mostrar modal con último capítulo agregado
+    // Mostrar modal con capítulos actualizados
     function showLastChapterModal() {
       if (chapters.length === 0) return;
       
-      // Parsear fechas y encontrar la más reciente
-      const chaptersWithDates = chapters.map(ch => ({
-        ...ch,
-        fechaDate: parseDate(ch.fecha)
-      })).filter(ch => ch.fechaDate !== null); // Solo capítulos con fecha válida
+      // Filtrar solo los capítulos actualizados (con "x" en columna D)
+      const chaptersActualizados = chapters.filter(ch => ch.actualizado === true);
       
-      if (chaptersWithDates.length === 0) return; // No hay fechas válidas
-      
-      // Encontrar la fecha más reciente
-      let latestDate = chaptersWithDates[0].fechaDate;
-      chaptersWithDates.forEach(ch => {
-        if (ch.fechaDate.getTime() > latestDate.getTime()) {
-          latestDate = ch.fechaDate;
-        }
-      });
-      
-      // Filtrar capítulos con la fecha más reciente
-      const latestChapters = chaptersWithDates.filter(ch => 
-        ch.fechaDate.getTime() === latestDate.getTime()
-      );
+      if (chaptersActualizados.length === 0) return; // No hay capítulos actualizados
       
       // Crear contenido del modal
       const modalBody = document.getElementById('lastChapterModalBody');
@@ -1658,14 +1627,12 @@
       
       let html = '';
       
-      if (latestChapters.length === 1) {
-        html = `<p><strong>Último capítulo agregado:</strong> "${latestChapters[0].title}"</p>`;
-        html += `<p><strong>Fecha:</strong> ${latestChapters[0].fecha}</p>`;
+      if (chaptersActualizados.length === 1) {
+        html = `<p><strong>Capítulo actualizado:</strong> "${chaptersActualizados[0].title}"</p>`;
       } else {
-        html = `<p><strong>Últimos capítulos agregados:</strong></p>`;
-        html += `<p><strong>Fecha:</strong> ${latestChapters[0].fecha}</p>`;
+        html = `<p><strong>Capítulos actualizados:</strong></p>`;
         html += `<ul class="modal-chapter-list">`;
-        latestChapters.forEach(ch => {
+        chaptersActualizados.forEach(ch => {
           html += `<li class="modal-chapter-item">${ch.title}</li>`;
         });
         html += `</ul>`;
